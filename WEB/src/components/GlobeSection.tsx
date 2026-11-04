@@ -4,18 +4,19 @@ import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { gsap, useGSAP } from "@/lib/gsap";
-import { byCountry } from "@/data/packages";
-
-const packages = byCountry.slice(0, 12);
+import { useSite } from "./ContentProvider";
+import { LANDMARK } from "./three/Monuments";
 import { Reveal, Scramble } from "./ui";
 
 const GlobeScene = dynamic(() => import("./three/GlobeScene"), { ssr: false });
 
 export default function GlobeSection() {
+  const { byCountry } = useSite();
+  const packages = byCountry;
   const root = useRef<HTMLElement>(null);
-  const [active, setActive] = useState(packages[0].slug);
+  const [active, setActive] = useState(packages[0]?.slug ?? "");
   const [live, setLive] = useState(false);
-  const current = packages.find((p) => p.slug === active)!;
+  const current = packages.find((p) => p.slug === active) ?? packages[0];
 
   useEffect(() => {
     const io = new IntersectionObserver(([e]) => setLive(e.isIntersecting), { rootMargin: "200px" });
@@ -32,7 +33,7 @@ export default function GlobeSection() {
       setActive((a) => packages[(packages.findIndex((p) => p.slug === a) + 1) % packages.length].slug);
     }, 3500);
     return () => clearInterval(id);
-  }, [live]);
+  }, [live, packages]);
 
   useGSAP(
     () => {
@@ -59,7 +60,7 @@ export default function GlobeSection() {
     <section
       ref={root}
       id="destinations"
-      className="relative overflow-hidden bg-[radial-gradient(ellipse_at_center,#dfeaf5_0%,#f4f7fb_65%)] py-28"
+      className="relative overflow-hidden bg-[radial-gradient(ellipse_at_center,color-mix(in_srgb,var(--glow)_10%,transparent)_0%,transparent_65%)] py-28"
       onPointerEnter={() => (paused.current = true)}
       onPointerLeave={() => (paused.current = false)}
     >
@@ -94,7 +95,8 @@ export default function GlobeSection() {
           </div>
           <div data-detail className="frost-glass absolute bottom-4 left-4 max-w-xs rounded-2xl p-5 md:bottom-10 md:left-0">
             <p className="label text-glow">
-              {current.place} · {current.days} days
+              {LANDMARK[current.country] ? `${LANDMARK[current.country]} · ` : ""}
+              {current.country}
             </p>
             <p className="mt-2 text-2xl font-semibold">{current.title}</p>
             <p className="mt-1 text-sm text-ice/60">{current.tagline}</p>

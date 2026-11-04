@@ -4,7 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { gsap, useGSAP, ScrollTrigger } from "@/lib/gsap";
-import { nightsOf, packages } from "@/data/packages";
+import { nightsOf } from "@/data/packages";
+import { useSite } from "./ContentProvider";
 import { Reveal, Scramble } from "./ui";
 
 const FLAP_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ";
@@ -28,6 +29,7 @@ const plain = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(
 
 /** Airport split-flap board of real upcoming departures; every cell clatters through letters before settling. */
 export function DepartureBoard() {
+  const { packages } = useSite();
   const root = useRef<HTMLElement>(null);
   const flips = useRef<gsap.core.Timeline[]>([]);
   const [clock, setClock] = useState("--:--");
@@ -50,7 +52,7 @@ export function DepartureBoard() {
           }),
         )
         .sort((a, b) => a.iso.localeCompare(b.iso)),
-    [],
+    [packages],
   );
   const ROWS = 8;
   const [page, setPage] = useState(0);
@@ -108,7 +110,7 @@ export function DepartureBoard() {
   }, [all.length]);
 
   return (
-    <section ref={root} className="mx-auto max-w-7xl px-5 py-24 md:px-10">
+    <section ref={root} id="departures" className="mx-auto max-w-7xl px-5 py-24 md:px-10">
       <div className="mb-10 flex flex-col justify-between gap-6 md:flex-row md:items-end">
         <div>
           <Scramble className="label mb-4 block text-glow">[ ✈ ] Live departures</Scramble>
@@ -168,11 +170,12 @@ export function DepartureBoard() {
 
 /** Four columns of trip photos sliding past each other on scroll, with a pinned statement in the middle. */
 export function PhotoWall() {
+  const { packages } = useSite();
   const root = useRef<HTMLElement>(null);
   const columns = useMemo(() => {
     const imgs = packages.map((p) => ({ src: p.image, alt: `${p.place}, ${p.country}`, slug: p.slug }));
     return [0, 1, 2, 3].map((c) => [...imgs.filter((_, i) => i % 4 === c), ...imgs.filter((_, i) => i % 4 === c)].slice(0, 7));
-  }, []);
+  }, [packages]);
   const countries = new Set(packages.map((p) => p.country)).size;
 
   useGSAP(
@@ -190,7 +193,7 @@ export function PhotoWall() {
   );
 
   return (
-    <section ref={root} className="relative h-[130vh] overflow-hidden bg-ink">
+    <section ref={root} id="collection" className="relative h-[130vh] overflow-hidden">
       <div className="absolute inset-0 grid grid-cols-2 gap-3 px-3 md:grid-cols-4 md:gap-4 md:px-4 [mask-image:linear-gradient(transparent,#000_15%,#000_85%,transparent)]">
         {columns.map((col, i) => (
           <div key={i} data-col-wall className={`flex flex-col gap-3 md:gap-4 ${i > 1 ? "hidden md:flex" : ""}`}>
@@ -202,7 +205,7 @@ export function PhotoWall() {
           </div>
         ))}
       </div>
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(244,247,251,.92)_0%,rgba(244,247,251,.6)_35%,transparent_70%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,color-mix(in_srgb,var(--ink)_92%,transparent)_0%,color-mix(in_srgb,var(--ink)_60%,transparent)_35%,transparent_70%)]" />
       <div data-wall-text className="pointer-events-none sticky top-0 flex h-screen flex-col items-center justify-center px-6 text-center">
         <p className="label mb-6 text-glow">[ ◎ ] The collection</p>
         <p className="font-wide text-6xl font-extrabold uppercase leading-[0.9] tracking-[-0.03em] md:text-8xl">

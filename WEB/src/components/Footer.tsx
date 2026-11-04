@@ -3,10 +3,11 @@
 import { useRef } from "react";
 import Link from "next/link";
 import { gsap, useGSAP } from "@/lib/gsap";
-import { packages } from "@/data/packages";
+import { useSite } from "./ContentProvider";
 import { RollText, Scramble } from "./ui";
 
 export default function Footer() {
+  const { packages } = useSite();
   const root = useRef<HTMLElement>(null);
 
   useGSAP(

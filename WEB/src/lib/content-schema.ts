@@ -1,0 +1,255 @@
+// Field lists for every editable collection. The CRM renders its forms from these, and the save
+// action converts + validates with the same lists, so the two can't drift apart. Client-safe.
+import type { Content } from "./content-shared";
+
+export type FieldType = "text" | "textarea" | "number" | "date" | "datetime" | "bool" | "select" | "image" | "images" | "lines" | "itinerary" | "route" | "coords" | "packages" | "url";
+export type Field = { key: string; label: string; type: FieldType; options?: readonly string[]; hint?: string; required?: boolean; optional?: boolean };
+/** what the form holds: plain strings for text-like fields, arrays for image lists / package picks */
+export type Draft = Record<string, string | boolean | string[]>;
+
+export type CollectionKey = keyof Content;
+export const COLLECTIONS: { key: CollectionKey; title: string; sub: string; single?: boolean; titleKey: string; fields: Field[] }[] = [
+  {
+    key: "packages",
+    title: "Tour packages",
+    sub: "Every tour on the site: text, prices, photos, day plans, routes and departure dates.",
+    titleKey: "title",
+    fields: [
+      { key: "title", label: "Title", type: "text", required: true },
+      { key: "slug", label: "URL slug", type: "text", required: true, hint: "lower-case-with-dashes; the page lives at /packages/<slug>" },
+      { key: "place", label: "Places line", type: "text", hint: "e.g. Munnar · Alleppey · Kovalam" },
+      { key: "country", label: "Country", type: "text", required: true },
+      { key: "category", label: "Category", type: "select", options: ["Beach", "Mountains", "City", "Adventure", "Culture"] },
+      { key: "tourStyle", label: "Tour style", type: "select", options: ["Customized Holiday", "Group Trip", "Guided Tour", "Private Tour", "Self-Drive"] },
+      { key: "price", label: "Price per person (USD)", type: "number", required: true },
+      { key: "was", label: "Previous price (shows as a deal)", type: "number", optional: true },
+      { key: "days", label: "Days", type: "number" },
+      { key: "rating", label: "Rating (0–5)", type: "number" },
+      { key: "stars", label: "Hotel stars", type: "select", options: ["3", "4", "5"] },
+      { key: "mealPlan", label: "Meal plan", type: "select", options: ["Breakfast", "Half board", "Full board", "All meals"] },
+      { key: "flights", label: "Flights included", type: "bool" },
+      { key: "freeCancellation", label: "Free cancellation", type: "bool" },
+      { key: "groupSize", label: "Group size", type: "text" },
+      { key: "bestTime", label: "Best time to go", type: "text" },
+      { key: "image", label: "Cover photo", type: "image", required: true },
+      { key: "gallery", label: "Gallery photos", type: "images" },
+      { key: "tagline", label: "Tagline", type: "text" },
+      { key: "description", label: "Description", type: "textarea" },
+      { key: "highlights", label: "Highlights", type: "lines", hint: "one per line" },
+      { key: "inclusions", label: "Inclusions", type: "lines", hint: "one per line" },
+      { key: "exclusions", label: "Exclusions", type: "lines", optional: true, hint: "one per line; leave empty for the standard list" },
+      { key: "itinerary", label: "Day-by-day plan", type: "itinerary", hint: "one day per line: Title | what happens" },
+      { key: "route", label: "Route stops", type: "route", hint: "one stop per line: Place | nights | stay | lat, lon" },
+      { key: "coords", label: "Map pin (lat, lon)", type: "coords" },
+      { key: "departures", label: "Departure dates", type: "lines", hint: "one per line, YYYY-MM-DD" },
+    ],
+  },
+  {
+    key: "alerts",
+    title: "Top alert bar",
+    sub: "The rotating announcements in the strip above the navbar.",
+    titleKey: "text",
+    fields: [
+      { key: "id", label: "ID", type: "text", required: true },
+      { key: "text", label: "Message", type: "text", required: true },
+      { key: "tone", label: "Tone", type: "select", options: ["deal", "info", "new"] },
+      { key: "cta", label: "Link label", type: "text", optional: true },
+      { key: "href", label: "Link", type: "text", optional: true, hint: "e.g. /packages or /#deals" },
+    ],
+  },
+  {
+    key: "promos",
+    title: "Promo codes",
+    sub: "Discount codes shown in the offers section, with their countdowns.",
+    titleKey: "code",
+    fields: [
+      { key: "code", label: "Code", type: "text", required: true },
+      { key: "title", label: "Title", type: "text", required: true },
+      { key: "detail", label: "Who it's for", type: "text" },
+      { key: "off", label: "Discount label", type: "text", hint: "e.g. 10% off or $200 off" },
+      { key: "endsAt", label: "Ends at (Dubai time)", type: "datetime" },
+      { key: "href", label: "Link", type: "text" },
+    ],
+  },
+  {
+    key: "notifications",
+    title: "Notifications",
+    sub: "Items in the navbar bell.",
+    titleKey: "title",
+    fields: [
+      { key: "id", label: "ID", type: "text", required: true, hint: "change it to make the item unread for everyone again" },
+      { key: "title", label: "Title", type: "text", required: true },
+      { key: "body", label: "Text", type: "text" },
+      { key: "kind", label: "Kind", type: "select", options: ["price", "departure", "event", "news"] },
+      { key: "when", label: "Posted at (Dubai time)", type: "datetime" },
+      { key: "href", label: "Link", type: "text" },
+    ],
+  },
+  {
+    key: "news",
+    title: "News",
+    sub: "Latest news cards on the home page.",
+    titleKey: "title",
+    fields: [
+      { key: "title", label: "Title", type: "text", required: true },
+      { key: "tag", label: "Tag", type: "text" },
+      { key: "date", label: "Date", type: "date" },
+      { key: "body", label: "Text", type: "textarea" },
+      { key: "image", label: "Photo", type: "image", required: true },
+      { key: "href", label: "Link", type: "text" },
+    ],
+  },
+  {
+    key: "events",
+    title: "Events",
+    sub: "Upcoming events cards on the home page.",
+    titleKey: "title",
+    fields: [
+      { key: "title", label: "Title", type: "text", required: true },
+      { key: "place", label: "Place", type: "text" },
+      { key: "start", label: "Starts", type: "date" },
+      { key: "end", label: "Ends", type: "date", optional: true },
+      { key: "body", label: "Text", type: "textarea" },
+      { key: "image", label: "Photo", type: "image", required: true },
+      { key: "href", label: "Link", type: "text" },
+    ],
+  },
+  {
+    key: "travelLinks",
+    title: "Booking links",
+    sub: "The “Book it yourself” section: links out for flights, hotels, buses and more. Switch each one on or off.",
+    titleKey: "label",
+    fields: [
+      { key: "enabled", label: "Show on the website", type: "bool" },
+      { key: "id", label: "ID", type: "text", required: true },
+      { key: "kind", label: "Icon", type: "select", options: ["flights", "hotels", "buses", "cabs", "trains", "visa", "insurance", "other"] },
+      { key: "label", label: "Title", type: "text", required: true },
+      { key: "blurb", label: "Short description", type: "text" },
+      { key: "url", label: "Link (opens in a new tab)", type: "url", required: true, hint: "full https:// address, e.g. your affiliate link" },
+      { key: "cta", label: "Button text", type: "text" },
+    ],
+  },
+  {
+    key: "settings",
+    title: "Homepage",
+    sub: "Hero photo, hot-deal countdown and the featured packages grid.",
+    single: true,
+    titleKey: "heroImage",
+    fields: [
+      { key: "heroImage", label: "Hero background photo", type: "image", required: true },
+      { key: "hotDealEnds", label: "Hot deals end at (Dubai time)", type: "datetime" },
+      { key: "featured", label: "Featured packages", type: "packages", hint: "shown in this order on the home page" },
+    ],
+  },
+];
+
+export const collection = (key: string) => COLLECTIONS.find((c) => c.key === key);
+
+const TZ = "+04:00"; // dates are entered in Dubai time
+const lines = (s: string) => s.split("\n").map((l) => l.trim()).filter(Boolean);
+const parts = (l: string) => l.split("|").map((x) => x.trim());
+const coords = (s: string): [number, number] => {
+  const [a, b] = s.split(",").map((x) => Number(x.trim()));
+  return [Number.isFinite(a) ? a : 0, Number.isFinite(b) ? b : 0];
+};
+
+/** stored value → what the form shows */
+export function toDraft(fields: Field[], item: Record<string, unknown>): Draft {
+  const d: Draft = {};
+  for (const f of fields) {
+    const v = item[f.key];
+    if (f.type === "bool") d[f.key] = !!v;
+    else if (f.type === "images" || f.type === "packages") d[f.key] = (v as string[] | undefined) ?? [];
+    else if (f.type === "lines") d[f.key] = ((v as string[] | undefined) ?? []).join("\n");
+    else if (f.type === "itinerary") d[f.key] = ((v as { title: string; desc: string }[] | undefined) ?? []).map((x) => `${x.title} | ${x.desc}`).join("\n");
+    else if (f.type === "route")
+      d[f.key] = ((v as { place: string; nights: number; stay: string; coords: [number, number] }[] | undefined) ?? []).map((s) => `${s.place} | ${s.nights} | ${s.stay} | ${s.coords.join(", ")}`).join("\n");
+    else if (f.type === "coords") d[f.key] = ((v as number[] | undefined) ?? []).join(", ");
+    else if (f.type === "datetime") d[f.key] = typeof v === "string" ? v.slice(0, 16) : "";
+    else d[f.key] = v === undefined || v === null ? "" : String(v);
+  }
+  return d;
+}
+
+const IMAGE_OK = /^https:\/\/([a-z0-9]+\.supabase\.co\/storage\/v1\/object\/public\/alsafr-media\/[\w.-]+|images\.unsplash\.com\/\S+)$/;
+
+/** form → stored value; throws a readable message when something is invalid */
+export function fromDraft(fields: Field[], d: Draft, label: string): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const f of fields) {
+    const raw = d[f.key];
+    const s = typeof raw === "string" ? raw.trim() : "";
+    const fail = (why: string) => {
+      throw new Error(`${label}: ${f.label} ${why}`);
+    };
+    if (f.required && f.type !== "bool" && (Array.isArray(raw) ? !raw.length : !s)) fail("is required");
+    if (f.optional && !s && !Array.isArray(raw) && f.type !== "bool") continue;
+    switch (f.type) {
+      case "bool":
+        out[f.key] = !!raw;
+        break;
+      case "number": {
+        const n = Number(s || 0);
+        if (!Number.isFinite(n) || n < 0) fail("must be a positive number");
+        out[f.key] = n;
+        break;
+      }
+      case "select":
+        if (f.options && !f.options.includes(s)) fail(`must be one of ${f.options.join(", ")}`);
+        out[f.key] = f.key === "stars" ? Number(s) : s;
+        break;
+      case "date":
+        if (s && !/^\d{4}-\d{2}-\d{2}$/.test(s)) fail("must be YYYY-MM-DD");
+        out[f.key] = s;
+        break;
+      case "datetime":
+        if (s && !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(s)) fail("must be a date and time");
+        out[f.key] = s ? `${s}:00${TZ}` : "";
+        break;
+      case "url":
+        try {
+          if (new URL(s).protocol !== "https:") throw 0;
+        } catch {
+          fail("must be a full https:// link");
+        }
+        out[f.key] = s;
+        break;
+      case "image":
+        if (s && !IMAGE_OK.test(s)) fail("must be an uploaded photo or an images.unsplash.com link");
+        out[f.key] = s;
+        break;
+      case "images":
+      case "packages": {
+        const list = (raw as string[]).map((x) => x.trim()).filter(Boolean);
+        if (f.type === "images" && list.some((x) => !IMAGE_OK.test(x))) fail("has a photo that isn't uploaded or from images.unsplash.com");
+        out[f.key] = list;
+        break;
+      }
+      case "lines": {
+        const list = lines(s);
+        if (f.key === "departures" && list.some((x) => !/^\d{4}-\d{2}-\d{2}$/.test(x))) fail("must be YYYY-MM-DD, one per line");
+        out[f.key] = f.key === "departures" ? list.sort() : list;
+        break;
+      }
+      case "itinerary":
+        out[f.key] = lines(s).map((l) => {
+          const [title, ...rest] = parts(l);
+          return { title, desc: rest.join(" | ") };
+        });
+        break;
+      case "route":
+        out[f.key] = lines(s).map((l) => {
+          const [place, nights, stay, c = ""] = parts(l);
+          if (!place) fail("needs a place on every line");
+          return { place, nights: Math.max(0, Math.round(Number(nights) || 0)), stay: stay ?? "", coords: coords(c) };
+        });
+        break;
+      case "coords":
+        out[f.key] = coords(s);
+        break;
+      default:
+        out[f.key] = s;
+    }
+  }
+  return out;
+}

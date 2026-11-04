@@ -4,9 +4,14 @@ import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import Lenis from "lenis";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
+import { MotionGlobalConfig } from "motion/react";
 import { useIntroDone } from "@/lib/intro";
+import { usePrefs } from "@/lib/theme";
 
 let instance: Lenis | null = null;
+
+/** px from the top of the window to the bottom of the pinned navbar */
+export const navBottom = () => document.querySelector("header")?.getBoundingClientRect().bottom ?? 0;
 
 /** smooth-scroll to an element through Lenis (a plain window.scrollTo gets overridden by it) */
 export const scrollToEl = (el: HTMLElement, offset = 0) => instance?.scrollTo(el, { offset, duration: 1.4 });
@@ -15,6 +20,7 @@ export default function SmoothScroll() {
   const lenis = useRef<Lenis | null>(null);
   const introDone = useIntroDone();
   const pathname = usePathname();
+  const reduce = usePrefs().reduce;
 
   useEffect(() => {
     const l = new Lenis({ autoRaf: false, lerp: 0.09, anchors: true });
@@ -28,6 +34,14 @@ export default function SmoothScroll() {
       l.destroy();
     };
   }, []);
+
+  // "Reduce motion" from the display panel: native scrolling, motion skips straight to end states,
+  // and GSAP tweens finish almost instantly (ScrollTrigger-scrubbed ones still follow the scroll)
+  useEffect(() => {
+    if (lenis.current) lenis.current.options.smoothWheel = !reduce;
+    MotionGlobalConfig.skipAnimations = reduce;
+    gsap.globalTimeline.timeScale(reduce ? 20 : 1);
+  }, [reduce]);
 
   useEffect(() => {
     if (introDone) lenis.current?.start();

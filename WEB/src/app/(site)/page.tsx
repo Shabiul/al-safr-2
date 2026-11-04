@@ -4,10 +4,13 @@ import GlobeSection from "@/components/GlobeSection";
 import { Cta, Deals, Included, Steps, Styles, Testimonials } from "@/components/HomeSections";
 import { Marquee } from "@/components/ui";
 import { DepartureBoard, PhotoWall } from "@/components/AnimatedSections";
-import { packages } from "@/data/packages";
+import { getSite } from "@/lib/content";
+import NewsEvents from "@/components/NewsEvents";
+import TravelLinks from "@/components/TravelLinks";
+import { PromoCodes, ScrollTint } from "@/components/SiteChrome";
 
-export default function Home() {
-  const words = [...new Set(packages.map((p) => p.country))];
+export default async function Home() {
+  const { countries: words } = await getSite();
   return (
     <main>
       <Hero />
@@ -22,13 +25,17 @@ export default function Home() {
       />
       <PackagesRail />
       <Deals />
+      <PromoCodes />
+      <TravelLinks />
       <DepartureBoard />
       <GlobeSection />
+      <NewsEvents />
       <PhotoWall />
       <Included />
       <Steps />
       <Testimonials />
       <Cta />
+      <ScrollTint />
     </main>
   );
 }

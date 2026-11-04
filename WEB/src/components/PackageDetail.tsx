@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { gsap, useGSAP } from "@/lib/gsap";
@@ -20,7 +20,8 @@ import {
   type Package,
 } from "@/data/packages";
 import dynamic from "next/dynamic";
-import { scrollToEl } from "./SmoothScroll";
+import { navBottom, scrollToEl } from "./SmoothScroll";
+import { sendEnquiry } from "@/app/(site)/actions";
 
 const RouteMap = dynamic(() => import("./RouteMap"), { ssr: false, loading: () => <div className="h-[380px] animate-pulse rounded-2xl bg-ice/5 md:h-[460px]" /> });
 import { Magnetic, RollText, Scramble } from "./ui";
@@ -37,7 +38,7 @@ const SECTIONS = [
 
 const scrollToId = (id: string) => {
   const el = document.getElementById(id);
-  if (el) scrollToEl(el, -150);
+  if (el) scrollToEl(el, -(navBottom() + 64)); // clear the pinned navbar and the sticky tabs
 };
 
 const dayKind = (p: Package, i: number) => (i === 0 ? "Arrival" : i === p.itinerary.length - 1 && p.itinerary.length > 1 ? "Departure" : "Sightseeing");
@@ -99,7 +100,7 @@ export default function PackageDetail({ p, next }: { p: Package; next: Package }
       </div>
 
       {/* section tabs */}
-      <nav className="sticky top-24 z-30 -mx-5 mt-8 overflow-x-auto border-b border-ice/10 bg-ink/85 px-5 backdrop-blur md:mx-0 md:px-0 [&::-webkit-scrollbar]:hidden" data-lenis-prevent>
+      <nav className="sticky top-[calc(var(--nav-h)+0.25rem)] z-30 -mx-5 mt-8 overflow-x-auto border-b border-ice/10 bg-ink/85 px-5 backdrop-blur md:mx-0 md:px-0 [&::-webkit-scrollbar]:hidden" data-lenis-prevent>
         <ul className="flex gap-6">
           {SECTIONS.map(([id, label]) => (
             <li key={id}>
@@ -278,7 +279,7 @@ export default function PackageDetail({ p, next }: { p: Package; next: Package }
           </section>
         </div>
 
-        <aside id="enquire" className="scroll-mt-40 lg:sticky lg:top-44 lg:self-start">
+        <aside id="enquire" className="scroll-mt-[calc(var(--nav-h)+4rem)] lg:sticky lg:top-[calc(var(--nav-h)+4.5rem)] lg:self-start">
           <Enquiry p={p} />
         </aside>
       </div>
@@ -481,26 +482,11 @@ function DayRow({ p, i }: { p: Package; i: number }) {
 
 function Enquiry({ p }: { p: Package }) {
   const [travellers, setTravellers] = useState(2);
-  const [sent, setSent] = useState(false);
+  const [state, send, pending] = useActionState(sendEnquiry, { ok: false });
+  const [editing, setEditing] = useState(false);
+  const sent = state.ok && !editing;
   const total = p.price * travellers;
   const off = offPercent(p);
-
-  // ponytail: no backend yet — hands the enquiry to the visitor's mail app; swap for an API route when the CRM is ready
-  const submit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const f = new FormData(e.currentTarget);
-    const body = [
-      `Package: ${p.title} (${p.country})`,
-      `Name: ${f.get("name")}`,
-      `Email: ${f.get("email")}`,
-      `Departure: ${f.get("date") || "Flexible"}`,
-      `Travellers: ${travellers}`,
-      `Estimate: ${money(total)}`,
-      `Notes: ${f.get("notes") || "-"}`,
-    ].join("\n");
-    window.location.href = `mailto:hello@alsafr.travel?subject=${encodeURIComponent(`Enquiry: ${p.title}`)}&body=${encodeURIComponent(body)}`;
-    setSent(true);
-  };
 
   return (
     <div className="frost-glass overflow-hidden rounded-3xl p-6">
@@ -521,14 +507,17 @@ function Enquiry({ p }: { p: Package }) {
       {sent ? (
         <div className="mt-8 animate-[pop_.6s_cubic-bezier(.2,1.4,.4,1)] rounded-2xl bg-glow/10 p-6 text-center">
           <p className="text-4xl">✦</p>
-          <p className="mt-3 text-xl font-semibold">Your enquiry is ready</p>
-          <p className="mt-2 text-sm text-ice/60">Send the email that just opened and a travel designer will reply within 24 hours.</p>
-          <button onClick={() => setSent(false)} className="label mt-5 text-glow hover:underline">
-            Edit enquiry
+          <p className="mt-3 text-xl font-semibold">Enquiry sent</p>
+          <p className="mt-2 text-sm text-ice/60">A travel designer will reply within 24 hours.</p>
+          <button onClick={() => setEditing(true)} className="label mt-5 text-glow hover:underline">
+            Send another
           </button>
         </div>
       ) : (
-        <form onSubmit={submit} className="mt-6 space-y-3">
+        <form action={(f) => { setEditing(false); return send(f); }} className="mt-6 space-y-3">
+          <input type="hidden" name="package" value={p.slug} />
+          <input type="hidden" name="travellers" value={travellers} />
+          <input name="website" tabIndex={-1} autoComplete="off" aria-hidden className="hidden" />
           <select name="date" defaultValue={formatDate(p.departures[0])} aria-label="Departure date" className="field [&>option]:bg-ink">
             {p.departures.map((d) => (
               <option key={d} value={formatDate(d)}>
@@ -553,6 +542,7 @@ function Enquiry({ p }: { p: Package }) {
           </div>
           <input name="name" required placeholder="Full name" autoComplete="name" className="field" />
           <input name="email" type="email" required placeholder="Email" autoComplete="email" className="field" />
+          <input name="phone" type="tel" placeholder="Phone / WhatsApp (optional)" autoComplete="tel" className="field" />
           <textarea name="notes" rows={2} placeholder="Anything we should know?" className="field resize-none" />
           <div className="flex items-baseline justify-between pt-2">
             <span className="label text-frost/60">Estimated total</span>
@@ -560,11 +550,12 @@ function Enquiry({ p }: { p: Package }) {
               {money(total)}
             </span>
           </div>
+          {state.error && <p role="alert" className="text-sm text-sand">{state.error}</p>}
           <Magnetic strength={0.15} className="block">
-            <button className="group relative w-full overflow-hidden rounded-full bg-ice py-4 font-medium text-ink">
+            <button disabled={pending} className="group relative w-full overflow-hidden rounded-full bg-ice py-4 font-medium text-ink disabled:opacity-60">
               <span className="absolute inset-0 translate-y-full bg-glow transition-transform duration-500 group-hover:translate-y-0" />
               <span className="relative">
-                <RollText>Request this package</RollText>
+                <RollText>{pending ? "Sending…" : "Request this package"}</RollText>
               </span>
             </button>
           </Magnetic>

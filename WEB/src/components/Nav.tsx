@@ -1,11 +1,12 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { gsap, useGSAP, ScrollTrigger } from "@/lib/gsap";
+import { gsap, useGSAP } from "@/lib/gsap";
 import { useIntroDone } from "@/lib/intro";
 import { Magnetic, RollText, Scramble } from "./ui";
+import { DisplayPanel, NotificationBell, ThemeToggle } from "./SiteChrome";
 
 const links = [
   { href: "/packages", label: "Tours" },
@@ -21,23 +22,21 @@ export default function Nav() {
   const [open, setOpen] = useState(false);
   const introDone = useIntroDone();
   const pathname = usePathname();
+  // the fade behind the pill only shows once content is scrolling under it (it would tint the hero photo)
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const on = () => setScrolled(window.scrollY > 8);
+    on();
+    window.addEventListener("scroll", on, { passive: true });
+    return () => window.removeEventListener("scroll", on);
+  }, []);
 
-  // slide in after intro, hide on scroll down / show on scroll up
+  // pinned: slides in once after the intro, then stays put while scrolling
   useGSAP(
     () => {
-      if (!introDone) return;
-      const isHome = pathname === "/";
-      if (isHome) gsap.set(bar.current, { yPercent: -120 });
-      else gsap.from(bar.current, { yPercent: -120, duration: 1.2, ease: "expo.out", delay: 0.4 });
-      const show = gsap.quickTo(bar.current, "yPercent", { duration: 0.5, ease: "power3" });
-      const top = () => (isHome ? window.innerHeight * 0.85 : 120);
-      ScrollTrigger.create({
-        start: 0,
-        end: "max",
-        onUpdate: (self) => show(self.scroll() < top() ? (isHome ? -120 : 0) : self.direction === 1 ? -120 : 0),
-      });
+      if (introDone) gsap.from(bar.current, { yPercent: -120, duration: 1.2, ease: "expo.out", delay: 0.4 });
     },
-    { dependencies: [introDone, pathname] },
+    { dependencies: [introDone] },
   );
 
   useGSAP(
@@ -65,24 +64,28 @@ export default function Nav() {
 
   return (
     <>
-      <header ref={bar} className="fixed inset-x-0 top-0 z-50 px-5 py-5 md:px-10">
-        <nav className="frost-glass mx-auto flex max-w-7xl items-center justify-between rounded-full py-2.5 pl-6 pr-2.5">
-          <Link href="/" className="flex items-center gap-3" data-cursor="Home">
+      <header ref={bar} className="fixed inset-x-0 z-50 px-5 py-4 transition-[top] duration-300 md:px-10" style={{ top: "var(--bar-h, 0px)" }}>
+        {/* page-coloured fade behind the floating pill, so content scrolling up never shows in the gap above it */}
+        <div aria-hidden className={`pointer-events-none absolute inset-x-0 -top-px h-[calc(100%+12px)] bg-[linear-gradient(to_bottom,var(--page-bg,var(--ink))_55%,transparent)] transition-opacity duration-500 ${scrolled ? "opacity-100" : "opacity-0"}`} />
+        <nav className="frost-glass nav-glass relative mx-auto flex max-w-7xl items-center justify-between gap-4 rounded-full py-2 pl-5 pr-2">
+          <Link href="/" className="flex shrink-0 items-center gap-3" data-cursor="Home">
             <span className="relative size-6 rotate-45 border border-glow">
               <span className="absolute inset-1 bg-glow/60" />
             </span>
-            <Scramble className="label text-[13px] font-semibold text-ice">AL SAFR</Scramble>
+            <Scramble className="label text-[13px] font-semibold leading-none text-ice">AL SAFR</Scramble>
           </Link>
-          <ul className="hidden items-center gap-8 lg:flex">
+          <ul className="hidden items-center gap-6 lg:flex xl:gap-8">
             {links.map((l) => (
               <li key={l.href}>
-                <Link href={l.href} className="label text-ice/80 hover:text-ice">
+                <Link href={l.href} className="label flex items-center leading-none text-ice/80 hover:text-ice">
                   <RollText>{l.label}</RollText>
                 </Link>
               </li>
             ))}
           </ul>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
+            <DisplayPanel />
+            <NotificationBell />
             <Magnetic>
               <Link
                 href="/packages"
@@ -109,6 +112,9 @@ export default function Nav() {
         className="fixed inset-0 z-[45] hidden flex-col justify-center gap-4 bg-night px-8"
         style={{ clipPath: "circle(0% at 100% 0%)" }}
       >
+        <div data-menu-item className="mb-4 flex items-center gap-3 text-sm text-ice/60">
+          Theme <ThemeToggle />
+        </div>
         {links.map((l, i) => (
           <div key={l.href} className="overflow-hidden">
             <Link data-menu-item href={l.href} onClick={() => setOpen(false)} className="flex items-baseline gap-4 text-5xl font-light">

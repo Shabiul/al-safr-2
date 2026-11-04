@@ -1,11 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { categories, departureMonths, formatMonth, packages } from "@/data/packages";
+import { formatMonth } from "@/data/packages";
+import { useSite } from "./ContentProvider";
 import { Magnetic } from "./ui";
 
 /** Where / style / month → /packages with those filters applied. */
 export default function TripFinder() {
+  const { categories, departureMonths, countries } = useSite();
   const router = useRouter();
   const submit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -24,7 +26,7 @@ export default function TripFinder() {
         <span className="label text-[10px] text-frost/60">Where to</span>
         <input name="q" list="finder-places" placeholder="Any country or city" className="bg-transparent text-sm outline-none placeholder:text-ice/40" />
         <datalist id="finder-places">
-          {[...new Set(packages.map((p) => p.country))].map((c) => (
+          {countries.map((c) => (
             <option key={c} value={c} />
           ))}
         </datalist>

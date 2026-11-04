@@ -1,11 +1,7 @@
 import type { Metadata } from "next";
 import { Archivo, Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
 import "./globals.css";
-import SmoothScroll from "@/components/SmoothScroll";
-import Preloader from "@/components/Preloader";
-import Cursor from "@/components/Cursor";
-import Nav from "@/components/Nav";
-import Footer from "@/components/Footer";
+import { THEME_BOOT } from "@/lib/theme";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -17,18 +13,14 @@ export const metadata: Metadata = {
   description: "All-inclusive holiday packages: flights, stays, transfers and experiences, handled end to end.",
 };
 
+// the public site's chrome lives in (site)/layout.tsx; /admin has its own
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${serif.variable} ${wide.variable} antialiased`}>
-      <body>
-        <Preloader />
-        <SmoothScroll />
-        <Cursor />
-        <Nav />
-        {children}
-        <Footer />
-        <div className="grain" aria-hidden />
-      </body>
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${serif.variable} ${wide.variable} antialiased`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
+      </head>
+      <body>{children}</body>
     </html>
   );
 }

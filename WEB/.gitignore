@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# CRM data (leads with customer details) — never commit
+/data/
+!.env.example
+# CRM login written by scripts/create-admin.mjs — never commit
+/admin-credentials.txt

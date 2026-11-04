@@ -2,13 +2,13 @@
 @import "lenis/dist/lenis.css";
 
 @theme inline {
-  /* light theme: "ink" is the page paper, "ice" is the dark text colour */
-  --color-ink: #f4f7fb;
-  --color-night: #ffffff;
-  --color-ice: #0b1a2b;
-  --color-frost: #4d6a85;
-  --color-glow: #0e8fb3;
-  --color-sand: #c97a2b;
+  /* "ink" is the page background, "ice" the main text colour; both flip with the theme */
+  --color-ink: var(--ink);
+  --color-night: var(--night);
+  --color-ice: var(--ice);
+  --color-frost: var(--frost);
+  --color-glow: var(--glow);
+  --color-sand: var(--sand);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-serif: var(--font-instrument);
@@ -17,14 +17,77 @@
 
 :root {
   color-scheme: light;
+  /* bottom edge of the pinned navbar (alert strip + floating pill); sticky bits sit below it */
+  --nav-h: calc(var(--bar-h, 0px) + 5.5rem);
+  --ink: #f4f7fb;
+  --night: #ffffff;
+  --ice: #0b1a2b;
+  --frost: #4d6a85;
+  --glow: #0e8fb3;
+  --sand: #c97a2b;
+  /* section tints the page background eases between while scrolling */
+  --tint-paper: #f4f7fb;
+  --tint-aqua: #e6f3f8;
+  --tint-sand: #fbf1e6;
+  --tint-lilac: #efeefb;
+  --tint-sage: #eef5ec;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ink: #05080f;
+  --night: #0c1320;
+  --ice: #e6f0fa;
+  --frost: #93b4d1;
+  --glow: #5fd4f5;
+  --sand: #f2b66d;
+  --tint-paper: #05080f;
+  --tint-aqua: #04121a;
+  --tint-sand: #140d06;
+  --tint-lilac: #0b0b1a;
+  --tint-sage: #08110b;
+}
+
+/* Display panel: accent colour (lagoon is the default above) — keep in sync with ACCENTS in lib/theme.ts */
+:root[data-accent="oasis"] { --glow: #12936b; }
+:root[data-accent="ember"] { --glow: #d4541c; }
+:root[data-accent="twilight"] { --glow: #7a4fd6; }
+:root[data-theme="dark"][data-accent="oasis"] { --glow: #4fe0b0; }
+:root[data-theme="dark"][data-accent="ember"] { --glow: #ff8a5c; }
+:root[data-theme="dark"][data-accent="twilight"] { --glow: #b69bff; }
+
+/* seasonal theme: retints the secondary accent and the warm section tint */
+:root[data-season="lights"] { --sand: #d99a0b; --tint-sand: #fdf3dc; }
+:root[data-season="winter"] { --sand: #3f7fd0; --tint-sand: #eaf1fb; }
+:root[data-season="blossom"] { --sand: #d6578f; --tint-sand: #fcecf3; }
+:root[data-season="summer"] { --sand: #e8692e; --tint-sand: #fdeee2; }
+:root[data-theme="dark"][data-season="lights"] { --sand: #ffc94a; --tint-sand: #161004; }
+:root[data-theme="dark"][data-season="winter"] { --sand: #8fbaff; --tint-sand: #070d18; }
+:root[data-theme="dark"][data-season="blossom"] { --sand: #ff9cc6; --tint-sand: #170810; }
+:root[data-theme="dark"][data-season="summer"] { --sand: #ff9a5c; --tint-sand: #170c05; }
+
+/* accessibility */
+:root[data-a11y~="large"] { font-size: 112.5%; }
+:root[data-a11y~="contrast"] { --frost: var(--ice); }
+:root[data-a11y~="contrast"] [class*="text-ice/"] { color: var(--ice) !important; }
+:root[data-a11y~="contrast"] [class*="border-ice/"] { border-color: color-mix(in srgb, var(--ice) 55%, transparent) !important; }
+:root[data-a11y~="underline"] a { text-decoration: underline; text-underline-offset: 3px; }
+:root[data-a11y~="reduce"] *,
+:root[data-a11y~="reduce"] *::before,
+:root[data-a11y~="reduce"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
 }
 
 html {
-  background: var(--color-ink);
+  background: var(--page-bg, var(--color-ink));
 }
 
 body {
-  background: var(--color-ink);
+  background: var(--page-bg, var(--color-ink));
+  transition: background-color 0.9s ease, color 0.4s ease;
   color: var(--color-ice);
   font-family: var(--font-sans), system-ui, sans-serif;
   overflow-x: hidden;
@@ -61,15 +124,21 @@ body {
 }
 
 .frost-glass {
-  background: linear-gradient(135deg, rgb(255 255 255 / 0.85), rgb(255 255 255 / 0.55));
-  border: 1px solid rgb(11 26 43 / 0.1);
-  box-shadow: 0 10px 40px -18px rgb(11 26 43 / 0.25);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--night) 85%, transparent), color-mix(in srgb, var(--night) 55%, transparent));
+  border: 1px solid color-mix(in srgb, var(--ice) 10%, transparent);
+  box-shadow: 0 10px 40px -18px rgb(0 0 0 / 0.25);
   backdrop-filter: blur(14px);
+}
+
+/* the navbar sits over moving content: near-solid so headings don't read through it */
+.frost-glass.nav-glass {
+  background: color-mix(in srgb, var(--night) 94%, transparent);
+  box-shadow: 0 12px 36px -20px rgb(0 0 0 / 0.35);
 }
 
 /* frosted fade-out text (a stroke shows the variable font's overlapping contours) */
 .text-outline {
-  background: linear-gradient(180deg, rgb(11 26 43 / 0.28), rgb(11 26 43 / 0.02));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ice) 28%, transparent), color-mix(in srgb, var(--ice) 2%, transparent));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -133,14 +202,14 @@ body {
 .field {
   width: 100%;
   border-radius: 0.75rem;
-  border: 1px solid rgb(11 26 43 / 0.2);
+  border: 1px solid color-mix(in srgb, var(--ice) 20%, transparent);
   background: transparent;
   padding: 0.75rem 1rem;
   font-size: 0.875rem;
   outline: none;
   transition: border-color 0.3s;
 }
-.field::placeholder { color: rgb(11 26 43 / 0.4); }
+.field::placeholder { color: color-mix(in srgb, var(--ice) 40%, transparent); }
 .field:focus { border-color: var(--color-glow); }
 
 /* route map pins and travelling vehicle (MapLibre markers live outside React) */
@@ -171,7 +240,7 @@ body {
 .route-pin-label {
   padding: 3px 9px;
   border-radius: 999px;
-  background: rgb(255 255 255 / 0.92);
+  background: color-mix(in srgb, var(--night) 92%, transparent);
   color: var(--color-ice);
   font: 600 11px var(--font-geist-sans), sans-serif;
   white-space: nowrap;
@@ -193,4 +262,27 @@ body {
   line-height: 1;
   transform: rotate(var(--rot, 0deg));
   filter: drop-shadow(0 4px 6px rgb(11 26 43 / 0.45));
+}
+
+/* border beam: a light that travels round a card's edge */
+@property --beam-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+.border-beam {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  padding: 2px;
+  border-radius: inherit;
+  pointer-events: none;
+  background: conic-gradient(from var(--beam-angle), transparent 0 72%, #0e8fb3 84%, #c97a2b 92%, transparent 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: beam 4s linear infinite;
+}
+@keyframes beam {
+  to { --beam-angle: 360deg; }
 }

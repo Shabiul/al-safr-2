@@ -4,16 +4,21 @@ import { useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { gsap, useGSAP } from "@/lib/gsap";
-import { categories, deals, formatDate, packages } from "@/data/packages";
+import { formatDate } from "@/data/packages";
+import { useSite } from "./ContentProvider";
 import TripFinder from "./TripFinder";
-import { Button, Marquee, Reveal, Scramble } from "./ui";
+import { Countdown } from "./SiteChrome";
+import AnimatedTestimonials, { type Review } from "./fx/AnimatedTestimonials";
+import ImageTrail from "./fx/ImageTrail";
+import { Button, Reveal, Scramble } from "./ui";
 
 /* Browse by holiday style: one tile per category, linking into the filtered catalogue */
 export function Styles() {
+  const { categories, packages } = useSite();
   const root = useRef<HTMLElement>(null);
   const styles = categories.slice(1).map((c) => {
     const list = packages.filter((p) => p.category === c);
-    return { name: c, count: list.length, from: Math.min(...list.map((p) => p.price)), image: list[0].image };
+    return { name: c, count: list.length, from: Math.min(...list.map((p) => p.price)), image: list[0].image, picks: list.slice(0, 3).map((p) => p.title) };
   });
   useGSAP(
     () => {
@@ -39,14 +44,14 @@ export function Styles() {
         </div>
         <p className="max-w-sm text-ice/60">Every tour is a complete package — pick the mood, we handle the flights, rooms, guides and transfers.</p>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 lg:flex lg:h-[540px] lg:gap-3">
         {styles.map((st, i) => (
           <Link
             key={st.name}
             href={`/packages?cat=${st.name}`}
             data-style
             data-cursor="Browse"
-            className={`group relative overflow-hidden rounded-[28px] border border-ice/10 ${i === 0 ? "aspect-[4/5] sm:col-span-2 sm:aspect-[16/10] lg:col-span-1 lg:aspect-[3/4]" : "aspect-[4/5] lg:aspect-[3/4]"}`}
+            className={`group relative overflow-hidden rounded-[28px] border border-ice/10 transition-[flex-grow] duration-700 ease-[cubic-bezier(.2,.8,.2,1)] lg:aspect-auto lg:h-full lg:flex-1 lg:hover:flex-[3.2] ${i === 0 ? "aspect-[4/5] sm:col-span-2 sm:aspect-[16/10]" : "aspect-[4/5]"}`}
           >
             <Image src={st.image} alt="" fill sizes="(max-width: 1024px) 50vw, 20vw" className="object-cover transition-transform duration-[1.4s] ease-[cubic-bezier(.2,.8,.2,1)] group-hover:scale-110" />
             <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/30 to-transparent" />
@@ -55,6 +60,13 @@ export function Styles() {
                 {st.count} {st.count === 1 ? "tour" : "tours"}
               </p>
               <p className="mt-1 font-serif text-4xl italic">{st.name}</p>
+              <ul className="grid max-h-0 overflow-hidden text-sm text-ice/75 opacity-0 transition-all duration-700 group-hover:mt-3 group-hover:max-h-32 group-hover:opacity-100">
+                {st.picks.map((t) => (
+                  <li key={t} className="whitespace-nowrap">
+                    ✦ {t}
+                  </li>
+                ))}
+              </ul>
               <p className="mt-2 flex items-center justify-between text-sm text-ice/70">
                 From ${st.from.toLocaleString("en-US")}
                 <span className="transition-transform duration-500 group-hover:-translate-y-1 group-hover:translate-x-1">↗</span>
@@ -72,6 +84,7 @@ const money = (n: number) => `$${n.toLocaleString("en-US")}`;
 /* Current offers: one large spotlight plus the rest as compact rows */
 export function Deals() {
   const root = useRef<HTMLElement>(null);
+  const { deals, settings } = useSite();
   const [lead, ...rest] = deals;
   useGSAP(
     () => {
@@ -83,12 +96,21 @@ export function Deals() {
   const was = (p: (typeof deals)[number]) => p.was ?? p.price;
   return (
     <section ref={root} id="deals" className="mx-auto max-w-7xl px-5 py-28 md:px-10">
-      <Scramble className="label mb-4 block text-glow">[ 03 ] Season offers</Scramble>
-      <Reveal as="h2" type="words" className="mb-12 text-5xl font-semibold leading-[0.9] tracking-tight md:text-7xl">
-        Same journeys, sharper prices.
-      </Reveal>
+      <div className="mb-12 flex flex-col justify-between gap-6 md:flex-row md:items-end">
+        <div>
+          <Scramble className="label mb-4 block text-glow">[ 03 ] Hot deals</Scramble>
+          <Reveal as="h2" type="words" className="text-5xl font-semibold leading-[0.9] tracking-tight md:text-7xl">
+            Same journeys, sharper prices.
+          </Reveal>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="label animate-pulse text-sand">🔥 Offers end in</span>
+          <Countdown to={settings.hotDealEnds} />
+        </div>
+      </div>
       <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
         <Link href={`/packages/${lead.slug}`} data-deal data-cursor="View" className="group relative block min-h-[480px] overflow-hidden rounded-[32px] border border-ice/10">
+          <span aria-hidden className="border-beam" />
           <div data-deal-img className="absolute inset-0">
             <Image src={lead.image} alt={`${lead.place}, ${lead.country}`} fill sizes="(max-width: 1024px) 100vw, 60vw" className="object-cover" />
           </div>
@@ -123,8 +145,9 @@ export function Deals() {
               href={`/packages/${p.slug}`}
               data-deal
               data-cursor="View"
-              className="group grid grid-cols-[120px_1fr] gap-5 overflow-hidden rounded-[28px] border border-ice/10 bg-night p-3 transition-colors hover:border-glow/40 sm:grid-cols-[160px_1fr]"
+              className="group relative grid grid-cols-[120px_1fr] gap-5 overflow-hidden rounded-[28px] border border-ice/10 bg-night p-3 transition-colors hover:border-glow/40 sm:grid-cols-[160px_1fr]"
             >
+              <span aria-hidden className="border-beam [animation-delay:-2s]" />
               <div className="relative overflow-hidden rounded-[20px]">
                 <Image src={p.image} alt={`${p.place}, ${p.country}`} fill sizes="160px" className="object-cover transition-transform duration-700 group-hover:scale-110" />
               </div>
@@ -210,7 +233,7 @@ export function Included() {
   };
 
   return (
-    <section ref={root} className="relative mx-auto max-w-7xl px-5 py-28 md:px-10">
+    <section ref={root} id="included" className="relative mx-auto max-w-7xl px-5 py-28 md:px-10">
       <div className="mb-14 flex flex-col justify-between gap-6 md:flex-row md:items-end">
         <div>
           <Scramble className="label mb-4 block text-glow">[ 05 ] Complete packages</Scramble>
@@ -298,7 +321,7 @@ export function Steps() {
   );
   return (
     <section ref={root} id="how" className="relative mx-auto grid max-w-7xl gap-16 px-5 py-28 md:px-10 lg:grid-cols-2">
-      <div className="lg:sticky lg:top-32 lg:self-start">
+      <div className="lg:sticky lg:top-[calc(var(--nav-h)+1.5rem)] lg:self-start">
         <Scramble className="label mb-4 block text-glow">[ 06 ] How it works</Scramble>
         <Reveal as="h2" type="words" className="text-5xl font-semibold leading-[0.9] tracking-tight md:text-7xl">
           Four steps from daydream to departure.
@@ -322,44 +345,24 @@ export function Steps() {
   );
 }
 
-const reviews = [
-  ["The seaplane landed and someone already knew our names. That was the whole trip.", "Aisha R.", "Maldives"],
-  ["We changed hotels twice mid-trip. Two WhatsApp messages. Done.", "Marco & Lena", "Japan"],
-  ["The balloon at dawn over the Mara — I still don't have words.", "Fahad K.", "Kenya"],
-  ["Every transfer was waiting. Every one. In India. Unreal.", "Priya S.", "India"],
-  ["Our kids now judge every holiday against Iceland.", "The Okafors", "Iceland"],
-  ["Best decision: letting them plan the wine days in Santorini.", "Hannah W.", "Greece"],
-] as const;
-
-function Review({ quote, name, where }: { quote: string; name: string; where: string }) {
-  return (
-    <figure className="frost-glass w-[340px] rounded-3xl p-6 md:w-[420px]">
-      <p className="text-sand">★★★★★</p>
-      <blockquote className="mt-3 font-serif text-2xl italic leading-snug text-ice/90">“{quote}”</blockquote>
-      <figcaption className="label mt-5 text-frost/60">
-        {name} — {where}
-      </figcaption>
-    </figure>
-  );
-}
+const reviews: Review[] = [
+  { quote: "The seaplane landed and someone already knew our names. That was the whole trip.", name: "Aisha R.", where: "Maldives", trip: "Overwater Escape", slug: "maldives-overwater-escape", rating: 5 },
+  { quote: "We changed hotels twice mid-trip. Two WhatsApp messages. Done.", name: "Marco & Lena", where: "Japan", trip: "Kyoto Seasons", slug: "kyoto-seasons", rating: 5 },
+  { quote: "The balloon at dawn over the Mara — I still don't have words.", name: "Fahad K.", where: "Kenya", trip: "Great Migration", slug: "kenya-great-migration", rating: 5 },
+  { quote: "Every transfer was waiting. Every one. In India. Unreal.", name: "Priya S.", where: "India", trip: "Golden Triangle", slug: "india-golden-triangle", rating: 5 },
+  { quote: "Our kids now judge every holiday against Iceland.", name: "The Okafors", where: "Iceland", trip: "Aurora Hunt", slug: "iceland-aurora-hunt", rating: 5 },
+  { quote: "Best decision: letting them plan the wine days in Santorini.", name: "Hannah W.", where: "Greece", trip: "Caldera Days", slug: "santorini-caldera-days", rating: 5 },
+];
 
 export function Testimonials() {
-  const half = Math.ceil(reviews.length / 2);
-  return (
-    <section className="relative space-y-6 overflow-hidden py-28">
-      <div className="mx-auto mb-10 max-w-7xl px-5 md:px-10">
-        <Scramble className="label mb-4 block text-glow">[ 07 ] Postcards</Scramble>
-        <Reveal as="h2" type="words" className="text-5xl font-semibold leading-[0.9] tracking-tight md:text-7xl">
-          Sent back to us.
-        </Reveal>
-      </div>
-      <Marquee speed={60} items={reviews.slice(0, half).map(([q, n, w]) => <Review key={n} quote={q} name={n} where={w} />)} />
-      <Marquee reverse speed={70} items={reviews.slice(half).map(([q, n, w]) => <Review key={n} quote={q} name={n} where={w} />)} />
-    </section>
-  );
+  return <AnimatedTestimonials reviews={reviews} />;
 }
 
+// smaller crops for the cursor trail
+
 export function Cta() {
+  const { packages } = useSite();
+  const trailImages = packages.map((p) => ({ src: p.image.replace("w=1600", "w=420"), alt: p.country }));
   const root = useRef<HTMLElement>(null);
   useGSAP(
     () => {
@@ -379,7 +382,7 @@ export function Cta() {
           style={{ background: "conic-gradient(from 0deg, #0e8fb340, #c97a2b33, #0e8fb310, #0e8fb340)" }}
         />
       </div>
-      <div className="relative">
+      <ImageTrail images={trailImages} className="absolute inset-0 flex items-center justify-center px-5">
         <Scramble className="label mb-8 block text-glow">[ 08 ] Ready when you are</Scramble>
         <Reveal as="h2" type="chars" className="text-[16vw] font-semibold leading-[0.85] tracking-[-0.05em] md:text-[11vw]">
           Where to next?
@@ -393,7 +396,8 @@ export function Cta() {
             hello@alsafr.travel
           </Button>
         </div>
-      </div>
+        <p className="label mt-10 hidden text-ice/40 md:block">Move your cursor — see where we go</p>
+      </ImageTrail>
     </section>
   );
 }

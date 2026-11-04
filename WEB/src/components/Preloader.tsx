@@ -52,7 +52,7 @@ export default function Preloader() {
   if (gone) return null;
 
   return (
-    <div ref={root} className="fixed inset-0 z-[100]" aria-label="Loading" role="status">
+    <div ref={root} className="pointer-events-none fixed inset-0 z-[100]" aria-label="Loading" role="status">
       <div className="absolute inset-0 flex">
         {Array.from({ length: 5 }, (_, i) => (
           <div key={i} data-panel className="h-full flex-1 bg-ink border-r border-ice/[0.03]" />

@@ -7,26 +7,23 @@ import { useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import {
   activitiesOf,
-  categories,
-  departureMonths,
   durationLabel,
   formatDate,
   formatMonth,
   nightsOf,
   offPercent,
-  packages,
   placesLabel,
   routeLabel,
   tourStyles,
   type Package,
 } from "@/data/packages";
-import { scrollToEl } from "./SmoothScroll";
+import { navBottom, scrollToEl } from "./SmoothScroll";
+import { useSite } from "./ContentProvider";
 import { Reveal, Scramble } from "./ui";
 
 type Initial = { cat?: string; q?: string; month?: string };
 
 const money = (n: number) => `$${n.toLocaleString("en-US")}`;
-const maxPrice = Math.max(...packages.map((p) => p.price));
 
 const durations = [
   { id: "day", label: "Day trip", test: (n: number) => n === 0 },
@@ -51,7 +48,6 @@ const sorts: Record<string, { label: string; fn: (a: Package, b: Package) => num
   soonest: { label: "Soonest departure", fn: (a, b) => a.departures[0].localeCompare(b.departures[0]) },
 };
 
-const destinations = [...new Set(packages.map((p) => p.country))].sort();
 const toggle = (list: string[], v: string) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
 
 // The static shell renders the full catalogue; once the URL is known it re-mounts with the hero finder's filters.
@@ -65,6 +61,7 @@ export default function PackageSearchPage() {
 
 function FromSearchParams() {
   const params = useSearchParams();
+  const { categories } = useSite();
   const cat = params.get("cat") ?? undefined;
   const initial: Initial = {
     cat: cat && (categories as readonly string[]).includes(cat) ? cat : undefined,
@@ -75,6 +72,9 @@ function FromSearchParams() {
 }
 
 function PackageSearch({ initial = {} }: { initial?: Initial }) {
+  const { packages, categories, departureMonths, countries } = useSite();
+  const maxPrice = Math.max(0, ...packages.map((p) => p.price));
+  const destinations = [...countries].sort();
   const [q, setQ] = useState(initial.q ?? "");
   const [month, setMonth] = useState(initial.month ?? "");
   const [guests, setGuests] = useState(2);
@@ -111,7 +111,7 @@ function PackageSearch({ initial = {} }: { initial?: Initial }) {
         (!withFlights || p.flights) &&
         (!withMeals || p.mealPlan !== "Breakfast"),
     );
-  }, [q, month, dest, dur, budget, budgetBands, stars, themes, freeCancel, withFlights, withMeals]);
+  }, [packages, q, month, dest, dur, budget, budgetBands, stars, themes, freeCancel, withFlights, withMeals]);
 
   const list = base.filter((p) => !types.length || types.includes(p.tourStyle)).sort(sorts[sort].fn);
   const activeCount =
@@ -147,9 +147,9 @@ function PackageSearch({ initial = {} }: { initial?: Initial }) {
         onSubmit={(e) => {
           e.preventDefault();
           const el = document.getElementById("results");
-          if (el) scrollToEl(el, -190);
+          if (el) scrollToEl(el, -(navBottom() + 96)); // clear the pinned navbar and the sticky search bar
         }}
-        className="frost-glass sticky top-24 z-30 mt-10 grid gap-1 rounded-3xl p-2 md:grid-cols-[1.4fr_1fr_0.8fr_auto] md:items-center md:rounded-full"
+        className="frost-glass sticky top-[calc(var(--nav-h)+0.5rem)] z-30 mt-10 grid gap-1 rounded-3xl p-2 md:grid-cols-[1.4fr_1fr_0.8fr_auto] md:items-center md:rounded-full"
       >
         <label className="flex flex-col gap-1 px-5 py-3 md:border-r md:border-ice/10">
           <span className="label text-[10px] text-frost/60">Going to</span>
@@ -198,7 +198,7 @@ function PackageSearch({ initial = {} }: { initial?: Initial }) {
           <button onClick={() => setFiltersOpen((o) => !o)} className="label mb-4 w-full rounded-full border border-ice/15 py-3 lg:hidden">
             {filtersOpen ? "Hide filters" : `Filters${activeCount ? ` (${activeCount})` : ""}`}
           </button>
-          <div className={`${filtersOpen ? "block" : "hidden"} frost-glass rounded-3xl p-5 lg:sticky lg:top-48 lg:block lg:max-h-[calc(100vh-13rem)] lg:overflow-y-auto`} data-lenis-prevent>
+          <div className={`${filtersOpen ? "block" : "hidden"} frost-glass rounded-3xl p-5 lg:sticky lg:top-[calc(var(--nav-h)+6rem)] lg:block lg:max-h-[calc(100vh-var(--nav-h)-7rem)] lg:overflow-y-auto`} data-lenis-prevent>
             <div className="mb-2 flex items-center justify-between">
               <p className="label text-ice">Filters</p>
               {activeCount > 0 && (

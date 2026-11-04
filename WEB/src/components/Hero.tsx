@@ -6,14 +6,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { gsap, useGSAP, SplitText, SCRAMBLE_CHARS } from "@/lib/gsap";
 import { useIntroDone } from "@/lib/intro";
-import { formatDate, packages } from "@/data/packages";
-import { img } from "@/data/img";
+import { formatDate } from "@/data/packages";
+import { useSite } from "./ContentProvider";
 import type { Anchor, Projected } from "./three/TajCloud";
 
 const TajCloud = dynamic(() => import("./three/TajCloud"), { ssr: false });
 
 // hazy sunrise over still water, like the Yamuna behind the Taj
-const BACKDROP = img("1514958566123-9ec36678c8c6", 2400);
 
 // points on the Taj Mahal (local coords: front faces +Z) and where their labels sit
 const CALLOUTS: { anchor: Anchor; label: string; pos: { left: string; top: string } }[] = [
@@ -24,7 +23,6 @@ const CALLOUTS: { anchor: Anchor; label: string; pos: { left: string; top: strin
 ];
 const ANCHORS = CALLOUTS.map((c) => c.anchor);
 
-const nextDeparture = [...packages.flatMap((p) => p.departures)].sort()[0];
 
 function Clock() {
   const [t, setT] = useState("--:--:--");
@@ -38,6 +36,8 @@ function Clock() {
 }
 
 export default function Hero() {
+  const { packages, settings } = useSite();
+  const nextDeparture = packages.flatMap((p) => p.departures).sort()[0] ?? "";
   const root = useRef<HTMLElement>(null);
   const lines = useRef<(SVGLineElement | null)[]>([]);
   const marks = useRef<(SVGGElement | null)[]>([]);
@@ -92,7 +92,7 @@ export default function Hero() {
   return (
     <section ref={root} className="relative h-[100svh] min-h-[720px] overflow-hidden bg-[#5d646c] text-white">
       <div data-bg className="absolute inset-0 opacity-0">
-        <Image src={BACKDROP} alt="" fill priority sizes="100vw" className="object-cover grayscale contrast-110 brightness-[.62]" />
+        <Image src={settings.heroImage} alt="" fill priority sizes="100vw" className="object-cover grayscale contrast-110 brightness-[.62]" />
       </div>
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/45 via-black/5 to-black/25" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black/45 to-transparent" />
@@ -127,7 +127,7 @@ export default function Hero() {
       ))}
       </div>
 
-      <div data-content className="pointer-events-none relative z-10 mx-auto flex h-full max-w-[1500px] flex-col justify-between px-5 pb-10 pt-8 md:px-11">
+      <div data-content className="pointer-events-none relative z-10 mx-auto flex h-full max-w-[1500px] flex-col justify-between px-5 pb-10 md:px-11" style={{ paddingTop: "calc(var(--nav-h) + 1rem)" }}>
         <div className="flex items-start justify-between gap-6">
           <div>
             <Link href="/" className="pointer-events-auto block font-wide text-3xl font-extrabold tracking-tight md:text-4xl">
