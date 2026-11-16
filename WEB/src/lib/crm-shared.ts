@@ -11,7 +11,7 @@ export type Lead = {
   name: string;
   email: string;
   phone: string;
-  source: "Website enquiry" | "Added by team";
+  source: "Website enquiry" | "Added by team" | "Dummy ticket form" | "Rail form";
   packageSlug: string | null;
   packageTitle: string | null;
   departure: string;

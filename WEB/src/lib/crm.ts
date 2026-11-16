@@ -40,7 +40,7 @@ export async function createLead(input: LeadInput, staffName?: string) {
     value: input.value ?? (pkg ? pkg.price * input.travellers : 0),
     notes: input.notes,
   };
-  const text = input.source === "Website enquiry" ? "Enquiry received from the website" : "Lead added by the team";
+  const text = input.source === "Added by team" ? "Lead added by the team" : `Request received from the website (${input.source})`;
   const [lead] = await sql<{ id: string }[]>`
     with l as (insert into alsafr.leads ${sql(row)} returning id)
     insert into alsafr.lead_activity (lead_id, text, staff_name) select id, ${text}, ${staffName ?? null} from l

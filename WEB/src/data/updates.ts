@@ -19,6 +19,42 @@ export const TRAVEL_LINKS: TravelLink[] = [
   { id: "buses", kind: "buses", label: "Buses", blurb: "Intercity and overnight coaches across India and the region.", url: "https://www.redbus.in", cta: "Book a bus", enabled: true },
 ];
 
+/** the Dummy ticket and Rail forms in the "Book it yourself" slider; edited in the CRM (Website content -> Booking forms) */
+export type BookingForms = {
+  /** photo behind the whole "Book it yourself" section; empty = plain background */
+  bgImage: string;
+  dummyEnabled: boolean;
+  dummyEyebrow: string;
+  dummyHeadline: string;
+  dummyPromise: string;
+  dummyTag: string;
+  dummyBlurb: string;
+  dummyClasses: string[];
+  railEnabled: boolean;
+  railNotice: string;
+  /** "Country | iso2" per line: the quick picks under "Train Ticket (Global)" */
+  railCountries: string[];
+  /** "Country | iso2" per line: the "Country to Visit" list under Rail Passes */
+  railPassCountries: string[];
+  nationalities: string[];
+};
+
+export const BOOKING_FORMS: BookingForms = {
+  bgImage: "",
+  dummyEnabled: true,
+  dummyEyebrow: "Get Your Flight",
+  dummyHeadline: "Reservation / Dummy Ticket",
+  dummyPromise: "in just 30 Minutes",
+  dummyTag: "Fast & Secure Booking",
+  dummyBlurb: "Professional flight reservations for visa documentation.\nAccepted for visa applications, onward/return travel proof, visa extensions & passport renewal.",
+  dummyClasses: ["Economy", "Business"],
+  railEnabled: true,
+  railNotice: "Select your country of residence as nationality; booking with the wrong residency or nationality may lead to supplement charges to be paid directly to the rail operator by the guest.",
+  railCountries: ["Saudi Arabia | sa", "Japan | jp", "Malaysia | my", "South Korea | kr", "Canada | ca", "United States | us", "Qatar | qa"],
+  railPassCountries: ["Switzerland | ch", "France | fr", "Italy | it", "Germany | de", "Spain | es", "Austria | at", "Netherlands | nl", "Eurail Global Pass | eu"],
+  nationalities: ["Indian", "Emirati", "Pakistani", "Bangladeshi", "Filipino", "Sri Lankan", "Nepali", "British", "American", "Other"],
+};
+
 export type Promo = { code: string; title: string; detail: string; off: string; endsAt: string; href: string };
 
 export const PROMOS: Promo[] = [
