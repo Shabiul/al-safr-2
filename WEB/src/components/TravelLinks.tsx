@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { BOOKING_FORMS, BOOK_TABS } from "@/data/updates";
 import { sendBooking } from "@/app/(site)/actions";
 import { useSite } from "./ContentProvider";
@@ -21,7 +21,11 @@ const CODES = [
 ];
 
 type Slide = { id: string; label: string; node: React.ReactNode };
-const today = () => new Date().toISOString().slice(0, 10);
+/** today's date for the date pickers' min; read after mount because the page is prerendered (empty until then, so no min is set) */
+const noop = () => () => {};
+function useToday() {
+  return useSyncExternalStore(noop, () => new Date().toISOString().slice(0, 10), () => "");
+}
 const pair = (l: string) => {
   const [name, iso = ""] = l.split("|").map((x) => x.trim());
   return { name, iso: iso.toLowerCase() };
@@ -295,6 +299,7 @@ function BookingForm({ kind, children, cta, done }: { kind: "dummy" | "rail" | "
 type Forms = typeof BOOKING_FORMS;
 
 function DummyTicket({ f }: { f: Forms }) {
+  const today = useToday();
   const [trip, setTrip] = useState("One Way");
   const [dep, setDep] = useState("");
   const classes = f.dummyClasses.length ? f.dummyClasses : ["Economy"];
@@ -326,11 +331,11 @@ function DummyTicket({ f }: { f: Forms }) {
               <input name="to" required placeholder="To where?" autoComplete="off" className="field" />
             </Label>
             <Label text="Departure">
-              <input name="date" type="date" required min={today()} value={dep} onChange={(e) => setDep(e.target.value)} className="field" />
+              <input name="date" type="date" required min={today} value={dep} onChange={(e) => setDep(e.target.value)} className="field" />
             </Label>
             {trip === "Round Trip" && (
               <Label text="Return date">
-                <input name="return" type="date" required min={dep || today()} className="field" />
+                <input name="return" type="date" required min={dep || today} className="field" />
               </Label>
             )}
             <Label text="Travellers">
@@ -367,6 +372,7 @@ function Flag({ iso }: { iso: string }) {
 }
 
 function Rail({ f }: { f: Forms }) {
+  const today = useToday();
   const [p, setP] = useState(0);
   const [country, setCountry] = useState("");
   const globals = f.railCountries.map(pair);
@@ -450,7 +456,7 @@ function Rail({ f }: { f: Forms }) {
           )}
           <Label text={p === 1 ? "Valid from *" : "Departure date & time *"}>
             <div className="flex gap-2">
-              <input name="date" type="date" required min={today()} className="field" />
+              <input name="date" type="date" required min={today} className="field" />
               {p !== 1 && <input name="time" type="time" defaultValue="06:00" className="field w-32 shrink-0" />}
             </div>
           </Label>
@@ -477,6 +483,7 @@ function Rail({ f }: { f: Forms }) {
 /* ---------- hotels ---------- */
 
 function Hotel({ f }: { f: Forms }) {
+  const today = useToday();
   const [inn, setInn] = useState("");
   const stars = f.hotelStars.length ? f.hotelStars : ["Any"];
   return (
@@ -495,10 +502,10 @@ function Hotel({ f }: { f: Forms }) {
               </Label>
             </div>
             <Label text="Check-in">
-              <input name="date" type="date" required min={today()} value={inn} onChange={(e) => setInn(e.target.value)} className="field" />
+              <input name="date" type="date" required min={today} value={inn} onChange={(e) => setInn(e.target.value)} className="field" />
             </Label>
             <Label text="Check-out">
-              <input name="return" type="date" required min={inn || today()} className="field" />
+              <input name="return" type="date" required min={inn || today} className="field" />
             </Label>
             <Label text="Guests">
               <Pax seniors={false} />
@@ -521,6 +528,7 @@ function Hotel({ f }: { f: Forms }) {
 /* ---------- buses ---------- */
 
 function Bus() {
+  const today = useToday();
   return (
     <div className={`${panel} lg:grid-cols-[1fr_minmax(0,34rem)] lg:items-center`}>
       <div className="text-center lg:px-6">
@@ -538,7 +546,7 @@ function Bus() {
               <input name="to" required placeholder="To where?" autoComplete="off" className="field" />
             </Label>
             <Label text="Travel date">
-              <input name="date" type="date" required min={today()} className="field" />
+              <input name="date" type="date" required min={today} className="field" />
             </Label>
             <Label text="Passengers">
               <Pax seniors={false} />
