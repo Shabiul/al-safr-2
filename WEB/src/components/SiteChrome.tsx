@@ -1,13 +1,11 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useState, useSyncExternalStore } from "react";
-import { createPortal } from "react-dom";
+import { useEffect, useLayoutEffect, useMemo, useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
 import { ScrollTrigger } from "@/lib/gsap";
 import { useIntroDone } from "@/lib/intro";
-import { ACCENTS, SEASONS, resetPrefs, setPrefs, setTheme, usePrefs, useSeason, useTheme, type Season } from "@/lib/theme";
 import { useSite } from "./ContentProvider";
 
 /* ---------- small shared bits ---------- */
@@ -49,185 +47,6 @@ export function Countdown({ to, compact = false }: { to: string; compact?: boole
   );
 }
 
-/* ---------- theme toggle ---------- */
-
-export function ThemeToggle({ className = "" }: { className?: string }) {
-  const theme = useTheme();
-  const dark = theme === "dark";
-  return (
-    <button
-      onClick={() => setTheme(dark ? "light" : "dark")}
-      aria-label={dark ? "Switch to light theme" : "Switch to dark theme"}
-      className={`relative flex h-7 w-12 items-center rounded-full border border-ice/20 bg-ice/10 p-0.5 transition-colors ${className}`}
-    >
-      <motion.span layout transition={{ type: "spring", bounce: 0.35, duration: 0.5 }} className={`flex size-6 items-center justify-center rounded-full bg-night text-xs shadow ${dark ? "ml-auto" : ""}`}>
-        {dark ? "☾" : "☀"}
-      </motion.span>
-    </button>
-  );
-}
-
-/* ---------- display settings panel (appearance, colour, season, accessibility) ---------- */
-
-const A11Y: { key: "large" | "contrast" | "reduce" | "underline"; name: string; hint: string }[] = [
-  { key: "large", name: "Larger text", hint: "Increase text size across the site" },
-  { key: "contrast", name: "High contrast", hint: "Stronger text and borders" },
-  { key: "reduce", name: "Reduce motion", hint: "Turn off animations and smooth scroll" },
-  { key: "underline", name: "Underline links", hint: "Make every link easy to spot" },
-];
-
-const noop = () => () => {};
-
-/** "nav": round icon in the website navbar, panel drops from the top right.
- *  "sidebar": labelled row in the CRM sidebar, panel opens beside it (top right on phones, where the sidebar is a top bar). */
-export function DisplayPanel({ placement = "nav" }: { placement?: "nav" | "sidebar" }) {
-  const side = placement === "sidebar";
-  const [open, setOpen] = useState(false);
-  const prefs = usePrefs();
-  const theme = useTheme();
-  const season = useSeason();
-  const accent = ACCENTS.find((a) => a.id === prefs.accent) ?? ACCENTS[0];
-  const mounted = useSyncExternalStore(noop, () => true, () => false);
-
-  useEffect(() => {
-    if (!open) return;
-    const esc = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    window.addEventListener("keydown", esc);
-    return () => window.removeEventListener("keydown", esc);
-  }, [open]);
-
-  return (
-    <>
-      <button
-        onClick={() => setOpen(true)}
-        aria-label="Display settings: theme, colours and accessibility"
-        aria-expanded={open}
-        className={
-          side
-            ? "flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-ice/65 transition-colors hover:bg-ice/5 hover:text-ice"
-            : "flex size-10 items-center justify-center rounded-full border border-ice/20 transition-colors hover:border-glow"
-        }
-      >
-        <svg viewBox="0 0 24 24" className="size-[18px] shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 22a10 10 0 1 1 10-10c0 2.8-2.2 4-4 4h-2a2 2 0 0 0-1.5 3.3A1.6 1.6 0 0 1 12 22Z" />
-          <circle cx="7.5" cy="10.5" r="1" fill="currentColor" />
-          <circle cx="11" cy="6.8" r="1" fill="currentColor" />
-          <circle cx="16" cy="8" r="1" fill="currentColor" />
-        </svg>
-        {side && <span className="hidden md:inline">Display</span>}
-      </button>
-      {/* portalled: the nav header is transformed by GSAP, which would trap a fixed child */}
-      {mounted && createPortal(
-      <AnimatePresence>
-        {open && (
-          <>
-            <div key="scrim" onClick={() => setOpen(false)} className="fixed inset-0 z-[70]" />
-            <motion.div
-              key="panel"
-              role="dialog"
-              aria-label="Display"
-              initial={{ opacity: 0, y: side ? 10 : -10, scale: 0.97 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: side ? 10 : -10, scale: 0.97 }}
-              transition={{ duration: 0.22, ease: "easeOut" }}
-              style={side ? undefined : { top: "calc(var(--bar-h, 0px) + 5.25rem)" }}
-              className={`fixed z-[71] w-[min(380px,calc(100vw-2rem))] overflow-y-auto rounded-[28px] border border-ice/10 bg-night text-ice shadow-[0_30px_80px_-20px_rgba(0,0,0,.45)] ${
-                side
-                  ? "right-4 top-16 max-h-[calc(100vh-5rem)] origin-top-right md:bottom-6 md:left-[252px] md:right-auto md:top-auto md:max-h-[calc(100vh-3rem)] md:origin-bottom-left"
-                  : "right-4 max-h-[calc(100vh-7rem)] origin-top-right md:right-10"
-              }`}
-              data-lenis-prevent
-            >
-              <div className="flex items-center justify-between px-6 py-5">
-                <p className="text-lg font-bold tracking-tight">Display</p>
-                <button onClick={() => setOpen(false)} aria-label="Close display settings" className="flex size-9 items-center justify-center rounded-full border border-ice/20 transition-colors hover:border-glow">
-                  <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
-                </button>
-              </div>
-
-              <section className="border-t border-ice/10 px-6 py-5">
-                <p className="label mb-3 text-ice/60">Appearance</p>
-                <div className="grid grid-cols-3 gap-1 rounded-2xl bg-ink p-1">
-                  {(["light", "dark", "auto"] as const).map((m) => (
-                    <button key={m} onClick={() => setPrefs({ mode: m })} aria-pressed={prefs.mode === m} className={`relative flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm capitalize transition-colors ${prefs.mode === m ? "font-semibold text-ice" : "text-ice/60 hover:text-ice"}`}>
-                      {prefs.mode === m && <motion.span layoutId="mode-pill" className="absolute inset-0 rounded-xl border border-ice/10 bg-night shadow-sm" transition={{ type: "spring", bounce: 0.2, duration: 0.4 }} />}
-                      <svg viewBox="0 0 24 24" className="relative size-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                        {m === "light" ? (
-                          <><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></>
-                        ) : m === "dark" ? (
-                          <path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z" />
-                        ) : (
-                          <><rect x="3" y="4" width="18" height="12" rx="2" /><path d="M8 20h8M12 16v4" /></>
-                        )}
-                      </svg>
-                      <span className="relative">{m}</span>
-                    </button>
-                  ))}
-                </div>
-              </section>
-
-              <section className="border-t border-ice/10 px-6 py-5">
-                <p className="label mb-3 text-ice/60">Colour theme</p>
-                <div className="flex gap-3">
-                  {ACCENTS.map((a) => (
-                    <button
-                      key={a.id}
-                      onClick={() => setPrefs({ accent: a.id })}
-                      aria-label={a.name}
-                      aria-pressed={prefs.accent === a.id}
-                      className="size-11 rounded-full transition-transform hover:scale-110"
-                      style={{ background: theme === "dark" ? a.dark : a.light, boxShadow: prefs.accent === a.id ? `0 0 0 3px var(--night), 0 0 0 5px ${theme === "dark" ? a.dark : a.light}` : undefined }}
-                    />
-                  ))}
-                </div>
-                <p className="mt-3 text-sm text-ice/60">{accent.name}</p>
-              </section>
-
-              <section className="border-t border-ice/10 px-6 py-5">
-                <label className="label mb-3 block text-ice/60" htmlFor="season">
-                  Seasonal theme
-                </label>
-                <div className="relative">
-                  <select id="season" value={prefs.season} onChange={(e) => setPrefs({ season: e.target.value as Season })} className="w-full appearance-none rounded-2xl border border-ice/15 bg-ink px-4 py-3.5 pr-10 text-[15px] font-medium text-ice outline-none focus:border-glow">
-                    <option value="auto">Automatic (by date)</option>
-                    <option value="off">Off</option>
-                    {SEASONS.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name}
-                      </option>
-                    ))}
-                  </select>
-                  <svg viewBox="0 0 24 24" className="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-ice/60" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="m6 9 6 6 6-6" /></svg>
-                </div>
-                {prefs.season === "auto" && <p className="mt-2 text-xs text-ice/50">Showing now: {SEASONS.find((s) => s.id === season)?.name ?? "none"}</p>}
-              </section>
-
-              <section className="border-t border-ice/10 px-6 pb-6 pt-5">
-                <p className="label mb-2 text-ice/60">Accessibility</p>
-                {A11Y.map((o) => (
-                  <button key={o.key} role="switch" aria-checked={prefs[o.key]} onClick={() => setPrefs({ [o.key]: !prefs[o.key] })} className="flex w-full items-center justify-between gap-4 py-2.5 text-left">
-                    <span>
-                      <span className="block text-[15px] font-medium">{o.name}</span>
-                      <span className="block text-xs text-ice/55">{o.hint}</span>
-                    </span>
-                    <span className={`flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors ${prefs[o.key] ? "bg-glow" : "bg-ice/20"}`}>
-                      <span className={`size-5 rounded-full bg-white shadow transition-transform ${prefs[o.key] ? "translate-x-5" : ""}`} />
-                    </span>
-                  </button>
-                ))}
-                <button onClick={resetPrefs} className="label mt-3 text-[10px] text-glow hover:underline">
-                  Reset to defaults
-                </button>
-              </section>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>,
-      document.body)}
-    </>
-  );
-}
-
 /* ---------- top alert bar ---------- */
 
 const BAR_KEY = "alsafr-bar-closed";
@@ -245,19 +64,28 @@ const subscribeBar = (l: () => void) => {
 };
 
 export function AlertBar() {
-  const { alerts: ALERTS } = useSite();
-  const [i, setI] = useState(0);
+  const site = useSite();
+  // the strip runs the CRM announcements, then every package on offer and the latest news, so those sections stay current without extra editing
+  const ALERTS = useMemo(
+    () => [
+      ...site.alerts,
+      ...site.deals.slice(0, 6).map((p) => ({
+        id: `deal-${p.slug}`,
+        tone: "deal" as const,
+        text: `${p.title}, ${p.country}: now $${p.price.toLocaleString("en-US")}${p.was ? ` (was $${p.was.toLocaleString("en-US")})` : ""} per person`,
+        href: `/packages/${p.slug}`,
+        cta: "View deal",
+      })),
+      ...site.news.slice(0, 4).map((n, k) => ({ id: `news-${k}-${n.title}`, tone: "news" as const, text: n.title, href: n.href || undefined, cta: "Read" })),
+    ],
+    [site],
+  );
   const closed = useSyncExternalStore(subscribeBar, barClosed, () => false);
 
   // the bar's height feeds the fixed nav and the hero so nothing sits underneath it
   useLayoutEffect(() => {
     document.documentElement.style.setProperty("--bar-h", closed ? "0px" : "36px");
   }, [closed]);
-
-  useEffect(() => {
-    const id = setInterval(() => setI((n) => (n + 1) % Math.max(1, ALERTS.length)), 5000);
-    return () => clearInterval(id);
-  }, [ALERTS.length]);
 
   const close = () => {
     try {
@@ -266,7 +94,17 @@ export function AlertBar() {
     barListeners.forEach((l) => l());
   };
 
-  const a = ALERTS[i % Math.max(1, ALERTS.length)];
+  const item = (a: (typeof ALERTS)[number]) => (
+    <span key={a.id} className="flex shrink-0 items-center gap-3 pr-14">
+      <span className="label text-[10px] opacity-70">{a.tone === "deal" ? "🔥 Hot deal" : a.tone === "news" ? "📰 News" : a.tone === "new" ? "✦ New" : "ⓘ Info"}</span>
+      <span className="whitespace-nowrap">{a.text}</span>
+      {a.href && (
+        <Link href={a.href} className="shrink-0 font-semibold underline underline-offset-2 hover:opacity-80">
+          {a.cta ?? "More"} →
+        </Link>
+      )}
+    </span>
+  );
   return (
     <AnimatePresence>
       {!closed && (
@@ -279,25 +117,14 @@ export function AlertBar() {
           role="region"
           aria-label="Announcements"
         >
-          <span className="label hidden text-[10px] opacity-70 sm:inline">{a.tone === "deal" ? "🔥 Hot deal" : a.tone === "new" ? "✦ New" : "ⓘ Info"}</span>
-          <div className="relative h-9 flex-1 overflow-hidden text-center">
-            <AnimatePresence mode="wait">
-              <motion.p
-                key={a.id}
-                initial={{ y: 24, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: -24, opacity: 0 }}
-                transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-                className="absolute inset-0 flex items-center justify-center gap-3 truncate"
-              >
-                <span className="truncate">{a.text}</span>
-                {a.href && (
-                  <Link href={a.href} className="shrink-0 font-semibold underline underline-offset-2 hover:opacity-80">
-                    {a.cta ?? "More"} →
-                  </Link>
-                )}
-              </motion.p>
-            </AnimatePresence>
+          {/* two copies side by side; the track slides left by exactly one copy, so the loop is seamless */}
+          <div className="relative h-9 flex-1 overflow-hidden [mask-image:linear-gradient(90deg,transparent,#000_3%,#000_97%,transparent)]">
+            <div className="marquee flex h-9 w-max items-center hover:[animation-play-state:paused]" style={{ "--speed": `${Math.max(30, ALERTS.length * 9)}s` } as React.CSSProperties}>
+              <div className="flex items-center">{ALERTS.map(item)}</div>
+              <div className="flex items-center" aria-hidden>
+                {ALERTS.map(item)}
+              </div>
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <button onClick={close} aria-label="Dismiss announcements" className="text-base opacity-70 hover:opacity-100">

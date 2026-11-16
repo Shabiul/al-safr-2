@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Archivo, Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
 import "./globals.css";
-import { THEME_BOOT } from "@/lib/theme";
+import { getContent } from "@/lib/content";
+import { themeBoot } from "@/lib/theme-boot";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -14,11 +15,12 @@ export const metadata: Metadata = {
 };
 
 // the public site's chrome lives in (site)/layout.tsx; /admin has its own
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const { display } = await getContent();
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${serif.variable} ${wide.variable} antialiased`} suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
+        <script dangerouslySetInnerHTML={{ __html: themeBoot(display) }} />
       </head>
       <body>{children}</body>
     </html>

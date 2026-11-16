@@ -10,20 +10,22 @@ export const ALERTS: Alert[] = [
   { id: "concierge", tone: "info", text: "Already travelling? Our 24/7 concierge is on WhatsApp", href: "/#contact", cta: "Contact" },
 ];
 
-export type TravelLink = { id: string; kind: "flights" | "hotels" | "buses" | "cabs" | "trains" | "visa" | "insurance" | "other"; label: string; blurb: string; url: string; cta: string; enabled: boolean };
-
-/** "book it yourself" partner links; switched on/off and re-pointed from the CRM (Website content -> Booking links) */
-export const TRAVEL_LINKS: TravelLink[] = [
-  { id: "flights", kind: "flights", label: "Flights", blurb: "Compare fares on every airline out of Dubai and beyond.", url: "https://www.google.com/travel/flights", cta: "Search flights", enabled: true },
-  { id: "hotels", kind: "hotels", label: "Hotels", blurb: "Just need a room? Browse hotels, villas and apartments.", url: "https://www.booking.com", cta: "Find a hotel", enabled: true },
-  { id: "buses", kind: "buses", label: "Buses", blurb: "Intercity and overnight coaches across India and the region.", url: "https://www.redbus.in", cta: "Book a bus", enabled: true },
-];
+/** the four request forms in the "Book it yourself" slider, in order; the navbar links to them too */
+export const BOOK_TABS = [
+  { id: "flights", label: "Flights", on: "dummyEnabled" },
+  { id: "hotels", label: "Hotels", on: "hotelEnabled" },
+  { id: "buses", label: "Buses", on: "busEnabled" },
+  { id: "trains", label: "Trains", on: "railEnabled" },
+] as const;
 
 /** the Dummy ticket and Rail forms in the "Book it yourself" slider; edited in the CRM (Website content -> Booking forms) */
 export type BookingForms = {
   /** photo behind the whole "Book it yourself" section; empty = plain background */
   bgImage: string;
   dummyEnabled: boolean;
+  hotelEnabled: boolean;
+  busEnabled: boolean;
+  hotelStars: string[];
   dummyEyebrow: string;
   dummyHeadline: string;
   dummyPromise: string;
@@ -42,6 +44,9 @@ export type BookingForms = {
 export const BOOKING_FORMS: BookingForms = {
   bgImage: "",
   dummyEnabled: true,
+  hotelEnabled: true,
+  busEnabled: true,
+  hotelStars: ["Any", "3 star", "4 star", "5 star"],
   dummyEyebrow: "Get Your Flight",
   dummyHeadline: "Reservation / Dummy Ticket",
   dummyPromise: "in just 30 Minutes",

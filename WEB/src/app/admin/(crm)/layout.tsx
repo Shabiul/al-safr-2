@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
-import { DisplayPanel } from "@/components/SiteChrome";
 import { currentStaff } from "@/lib/admin-auth";
 import { logout } from "../actions";
 import NavLinks, { Links } from "./NavLinks";
@@ -23,7 +22,6 @@ export default function CrmLayout({ children }: { children: React.ReactNode }) {
           <StaffNav />
         </Suspense>
         <div className="ml-auto flex shrink-0 items-center gap-3 md:ml-0 md:mt-auto md:flex-col md:items-stretch">
-          <DisplayPanel placement="sidebar" />
           <Link href="/" className="text-sm text-ice/60 hover:text-ice">
             ↗ View site
           </Link>

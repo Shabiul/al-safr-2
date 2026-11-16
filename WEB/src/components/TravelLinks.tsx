@@ -1,22 +1,10 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
-import { motion } from "motion/react";
-import { BOOKING_FORMS, type TravelLink } from "@/data/updates";
+import { BOOKING_FORMS, BOOK_TABS } from "@/data/updates";
 import { sendBooking } from "@/app/(site)/actions";
 import { useSite } from "./ContentProvider";
 import { Reveal, Scramble } from "./ui";
-
-const ICON: Record<TravelLink["kind"], React.ReactNode> = {
-  flights: <path d="M2 16l20-8-2-2-8 3-5-5-2 1 3 6-4 2-2-1-1 1 3 3z" />,
-  hotels: <path d="M3 20V6h8v6h10v8M3 16h18M7 10h.01M14 12V9a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3" />,
-  buses: <path d="M5 17V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v11M5 11h14M5 17h14v2H5zM8 20v1M16 20v1M8 14h.01M16 14h.01" />,
-  cabs: <path d="M5 17h14v-5l-2-5H7l-2 5zM5 12h14M7 17v2M17 17v2M9 4h6" />,
-  trains: <path d="M7 3h10a2 2 0 0 1 2 2v10a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V5a2 2 0 0 1 2-2zM5 11h14M9 21l1-3M15 21l-1-3M9 15h.01M15 15h.01" />,
-  visa: <path d="M6 3h12v18H6zM9 8h6M9 12h6M9 16h3" />,
-  insurance: <path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z" />,
-  other: <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM2 12h20M12 2c3 3 3 17 0 20M12 2c-3 3-3 17 0 20" />,
-};
 
 const CODES = [
   ["+971", "UAE"],
@@ -39,42 +27,33 @@ const pair = (l: string) => {
   return { name, iso: iso.toLowerCase() };
 };
 
-/** the "Book it yourself" section: a slider of the Dummy ticket form, the Rail form and partner links; all managed in the CRM (Website content) */
+/** the "Book it yourself" section: a slider with one request form each for Flights, Hotels, Buses and Trains. Every submission becomes a lead in the CRM; the forms are managed in Website content -> Booking forms */
 export default function TravelLinks() {
   const site = useSite();
-  const links = site.travelLinks.filter((l) => l.enabled);
   const forms = { ...BOOKING_FORMS, ...site.forms };
-  const slides = (
-    [
-      forms.dummyEnabled && {
-        id: "dummy",
-        label: "Dummy ticket",
-        node: <DummyTicket f={forms} />,
-      },
-      forms.railEnabled && {
-        id: "rail",
-        label: "Train & rail",
-        node: <Rail f={forms} />,
-      },
-      links.length > 0 && {
-        id: "links",
-        label: "Flights, hotels & more",
-        node: <Links links={links} />,
-      },
-    ] as (Slide | false)[]
-  ).filter((s): s is Slide => !!s);
+  const nodes: Record<string, React.ReactNode> = { flights: <DummyTicket f={forms} />, hotels: <Hotel f={forms} />, buses: <Bus />, trains: <Rail f={forms} /> };
+  const slides: Slide[] = BOOK_TABS.filter((t) => forms[t.on]).map((t) => ({ id: t.id, label: t.label, node: nodes[t.id] }));
 
   const track = useRef<HTMLDivElement>(null);
   const [at, setAt] = useState(0);
-  if (!slides.length) return null;
+  const ids = slides.map((s) => s.id).join();
   const go = (i: number) => {
     const el = track.current;
-    if (el)
-      el.scrollTo({
-        left: Math.max(0, Math.min(slides.length - 1, i)) * el.clientWidth,
-        behavior: "smooth",
-      });
+    if (el) el.scrollTo({ left: Math.max(0, Math.min(slides.length - 1, i)) * el.clientWidth, behavior: "smooth" });
   };
+  // navbar links ("/#book-hotels") open the matching slide: straight away when arriving from another page, and via an event when already here
+  useEffect(() => {
+    const open = (id: string, smooth: boolean) => {
+      const el = track.current;
+      const i = ids.split(",").indexOf(id);
+      if (el && i >= 0) el.scrollTo({ left: i * el.clientWidth, behavior: smooth ? "smooth" : "instant" });
+    };
+    open(location.hash.replace("#book-", ""), false);
+    const on = (e: Event) => open((e as CustomEvent<string>).detail, true);
+    window.addEventListener("book-tab", on);
+    return () => window.removeEventListener("book-tab", on);
+  }, [ids]);
+  if (!slides.length) return null;
 
   return (
     <div className="relative isolate overflow-hidden">
@@ -93,7 +72,7 @@ export default function TravelLinks() {
               Just need one piece of the trip?
             </Reveal>
             <p className="mt-4 text-ice/60">
-              Get a dummy ticket, a rail booking, or book flights and stays through our partners — or let us handle the whole journey.
+              Send us a flight, hotel, bus or train request — we reply on your number — or let us handle the whole journey.
             </p>
           </div>
           {slides.length > 1 && (
@@ -140,7 +119,7 @@ export default function TravelLinks() {
           className="flex snap-x snap-mandatory items-start overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {slides.map((s) => (
-            <div key={s.id} className="w-full shrink-0 snap-center">
+            <div key={s.id} id={`book-${s.id}`} className="w-full shrink-0 snap-center">
               {s.node}
             </div>
           ))}
@@ -158,51 +137,8 @@ export default function TravelLinks() {
             ))}
           </div>
         )}
-        <p className="mt-6 text-xs text-ice/40">
-          Dummy ticket and rail requests are answered by our team on the number you give. Partner links open in a new tab; bookings made there are with that
-          partner.
-        </p>
+        <p className="mt-6 text-xs text-ice/40">Every request goes straight to our team, who reply on the number you give.</p>
       </section>
-    </div>
-  );
-}
-
-/* ---------- partner links ---------- */
-
-function Links({ links }: { links: TravelLink[] }) {
-  return (
-    <div className={`grid gap-4 sm:grid-cols-2 ${links.length >= 4 ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}>
-      {links.map((l, i) => (
-        <motion.a
-          key={l.id}
-          href={l.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-60px" }}
-          transition={{
-            type: "spring",
-            bounce: 0.2,
-            duration: 0.7,
-            delay: i * 0.08,
-          }}
-          whileHover={{ y: -6 }}
-          data-cursor="Open"
-          className="group flex min-h-72 flex-col rounded-[32px] border border-ice/10 bg-night p-8 shadow-[0_20px_50px_-30px_rgba(0,0,0,.35)] transition-colors hover:border-glow"
-        >
-          <span className="mb-8 flex size-14 items-center justify-center rounded-2xl bg-glow/12 text-glow transition-colors group-hover:bg-glow group-hover:text-ink">
-            <svg viewBox="0 0 24 24" className="size-7" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-              {ICON[l.kind] ?? ICON.other}
-            </svg>
-          </span>
-          <span className="text-3xl font-semibold">{l.label}</span>
-          <span className="mt-2 flex-1 text-sm text-ice/60">{l.blurb}</span>
-          <span className="label mt-6 flex items-center gap-2 text-glow">
-            {l.cta || "Open"} <span className="transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5">↗</span>
-          </span>
-        </motion.a>
-      ))}
     </div>
   );
 }
@@ -324,7 +260,7 @@ function Phone() {
 }
 
 /** wraps a form: honeypot, posting, and the thank-you state */
-function BookingForm({ kind, children, cta, done }: { kind: "dummy" | "rail"; children: React.ReactNode; cta: string; done: string }) {
+function BookingForm({ kind, children, cta, done }: { kind: "dummy" | "rail" | "hotel" | "bus"; children: React.ReactNode; cta: string; done: string }) {
   const [state, send, pending] = useActionState(sendBooking, { ok: false });
   if (state.ok)
     return (
@@ -534,6 +470,83 @@ function Rail({ f }: { f: Forms }) {
           <Phone />
         </div>
       </BookingForm>
+    </div>
+  );
+}
+
+/* ---------- hotels ---------- */
+
+function Hotel({ f }: { f: Forms }) {
+  const [inn, setInn] = useState("");
+  const stars = f.hotelStars.length ? f.hotelStars : ["Any"];
+  return (
+    <div className={`${panel} lg:grid-cols-[1fr_minmax(0,34rem)] lg:items-center`}>
+      <div className="text-center lg:px-6">
+        <p className="text-3xl font-light text-sand md:text-5xl">Need a room?</p>
+        <h3 className="mt-3 text-3xl font-bold leading-tight tracking-tight md:text-5xl">Hotels, villas &amp; apartments</h3>
+        <p className="mx-auto mt-6 max-w-md text-sm text-ice/60">Tell us where and when. We compare stays and send you the best options and prices.</p>
+      </div>
+      <div className="rounded-3xl border border-ice/10 bg-ink/40 p-5 md:p-7">
+        <BookingForm kind="hotel" cta="Request hotel options" done="Our team will send hotel options and prices on the number you gave.">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <Label text="City or hotel">
+                <input name="to" required placeholder="Where are you staying?" autoComplete="off" className="field" />
+              </Label>
+            </div>
+            <Label text="Check-in">
+              <input name="date" type="date" required min={today()} value={inn} onChange={(e) => setInn(e.target.value)} className="field" />
+            </Label>
+            <Label text="Check-out">
+              <input name="return" type="date" required min={inn || today()} className="field" />
+            </Label>
+            <Label text="Guests">
+              <Pax seniors={false} />
+            </Label>
+            <Label text="Hotel class">
+              <select name="class" defaultValue={stars[0]} className={`field ${opt}`}>
+                {stars.map((c) => (
+                  <option key={c}>{c}</option>
+                ))}
+              </select>
+            </Label>
+          </div>
+          <Phone />
+        </BookingForm>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- buses ---------- */
+
+function Bus() {
+  return (
+    <div className={`${panel} lg:grid-cols-[1fr_minmax(0,34rem)] lg:items-center`}>
+      <div className="text-center lg:px-6">
+        <p className="text-3xl font-light text-sand md:text-5xl">Going by road?</p>
+        <h3 className="mt-3 text-3xl font-bold leading-tight tracking-tight md:text-5xl">Intercity &amp; overnight buses</h3>
+        <p className="mx-auto mt-6 max-w-md text-sm text-ice/60">Give us the route and the day. We find the seats and confirm with you.</p>
+      </div>
+      <div className="rounded-3xl border border-ice/10 bg-ink/40 p-5 md:p-7">
+        <BookingForm kind="bus" cta="Request bus seats" done="Our team will confirm bus options and fares on the number you gave.">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Label text="From">
+              <input name="from" required placeholder="From where?" autoComplete="off" className="field" />
+            </Label>
+            <Label text="To">
+              <input name="to" required placeholder="To where?" autoComplete="off" className="field" />
+            </Label>
+            <Label text="Travel date">
+              <input name="date" type="date" required min={today()} className="field" />
+            </Label>
+            <Label text="Passengers">
+              <Pax seniors={false} />
+            </Label>
+          </div>
+          <Phone />
+        </BookingForm>
+      </div>
     </div>
   );
 }

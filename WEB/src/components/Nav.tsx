@@ -6,7 +6,9 @@ import { usePathname } from "next/navigation";
 import { gsap, useGSAP } from "@/lib/gsap";
 import { useIntroDone } from "@/lib/intro";
 import { Magnetic, RollText, Scramble } from "./ui";
-import { DisplayPanel, NotificationBell, ThemeToggle } from "./SiteChrome";
+import { BOOKING_FORMS, BOOK_TABS } from "@/data/updates";
+import { useSite } from "./ContentProvider";
+import { NotificationBell } from "./SiteChrome";
 
 const links = [
   { href: "/packages", label: "Tours" },
@@ -22,6 +24,13 @@ export default function Nav() {
   const [open, setOpen] = useState(false);
   const introDone = useIntroDone();
   const pathname = usePathname();
+  // Flights / Hotels / Buses / Trains: each opens its request form in the "Book it yourself" slider (switched on or off in the CRM)
+  const forms = { ...BOOKING_FORMS, ...useSite().forms };
+  const all = [
+    ...BOOK_TABS.filter((t) => forms[t.on]).map((t) => ({ href: `/#book-${t.id}`, label: t.label, tab: t.id as string })),
+    ...links.map((l) => ({ ...l, tab: "" })),
+  ];
+  const openTab = (tab: string) => tab && window.dispatchEvent(new CustomEvent("book-tab", { detail: tab }));
   // the fade behind the pill only shows once content is scrolling under it (it would tint the hero photo)
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
@@ -74,17 +83,16 @@ export default function Nav() {
             </span>
             <Scramble className="label text-[13px] font-semibold leading-none text-ice">AL SAFR</Scramble>
           </Link>
-          <ul className="hidden items-center gap-6 lg:flex xl:gap-8">
-            {links.map((l) => (
+          <ul className="hidden items-center gap-6 xl:flex xl:gap-7">
+            {all.map((l) => (
               <li key={l.href}>
-                <Link href={l.href} className="label flex items-center leading-none text-ice/80 hover:text-ice">
+                <Link href={l.href} onClick={() => openTab(l.tab)} className="label flex items-center leading-none text-ice/80 hover:text-ice">
                   <RollText>{l.label}</RollText>
                 </Link>
               </li>
             ))}
           </ul>
           <div className="flex shrink-0 items-center gap-2">
-            <DisplayPanel />
             <NotificationBell />
             <Magnetic>
               <Link
@@ -98,7 +106,7 @@ export default function Nav() {
               onClick={() => setOpen((o) => !o)}
               aria-label={open ? "Close menu" : "Open menu"}
               aria-expanded={open}
-              className="relative z-[70] flex size-10 flex-col items-center justify-center gap-1.5 rounded-full border border-ice/20 lg:hidden"
+              className="relative z-[70] flex size-10 flex-col items-center justify-center gap-1.5 rounded-full border border-ice/20 xl:hidden"
             >
               <span className={`h-px w-4 bg-ice transition-transform duration-500 ${open ? "translate-y-[3.5px] rotate-45" : ""}`} />
               <span className={`h-px w-4 bg-ice transition-transform duration-500 ${open ? "-translate-y-[3.5px] -rotate-45" : ""}`} />
@@ -112,12 +120,17 @@ export default function Nav() {
         className="fixed inset-0 z-[45] hidden flex-col justify-center gap-4 bg-night px-8"
         style={{ clipPath: "circle(0% at 100% 0%)" }}
       >
-        <div data-menu-item className="mb-4 flex items-center gap-3 text-sm text-ice/60">
-          Theme <ThemeToggle />
-        </div>
-        {links.map((l, i) => (
+        {all.map((l, i) => (
           <div key={l.href} className="overflow-hidden">
-            <Link data-menu-item href={l.href} onClick={() => setOpen(false)} className="flex items-baseline gap-4 text-5xl font-light">
+            <Link
+              data-menu-item
+              href={l.href}
+              onClick={() => {
+                setOpen(false);
+                openTab(l.tab);
+              }}
+              className="flex items-baseline gap-4 text-4xl font-light sm:text-5xl"
+            >
               <span className="label text-glow">0{i + 1}</span>
               {l.label}
             </Link>

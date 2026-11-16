@@ -38,7 +38,11 @@ export default function Editor({ coll, initial, packages }: { coll: string; init
     startSave(async () => {
       const r = await saveCollection(coll, items);
       setMsg(r.ok ? { ok: true, text: "Saved — the website is updated." } : { ok: false, text: r.error ?? "Could not save." });
-      if (r.ok) setDirty(false);
+      if (r.ok) {
+        setDirty(false);
+        // the look is applied by a script in <head>, so a reload is how this page picks the new theme up
+        if (coll === "display") setTimeout(() => location.reload(), 300); // after the unsaved-changes guard has cleared
+      }
     });
 
   const item = items[sel];

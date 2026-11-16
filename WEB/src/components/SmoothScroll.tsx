@@ -6,7 +6,7 @@ import Lenis from "lenis";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { MotionGlobalConfig } from "motion/react";
 import { useIntroDone } from "@/lib/intro";
-import { usePrefs } from "@/lib/theme";
+import { useReduceMotion } from "@/lib/theme";
 
 let instance: Lenis | null = null;
 
@@ -20,7 +20,7 @@ export default function SmoothScroll() {
   const lenis = useRef<Lenis | null>(null);
   const introDone = useIntroDone();
   const pathname = usePathname();
-  const reduce = usePrefs().reduce;
+  const reduce = useReduceMotion();
 
   useEffect(() => {
     const l = new Lenis({ autoRaf: false, lerp: 0.09, anchors: true });
