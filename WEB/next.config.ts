@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   // CRM uploads go through server actions: photos are capped at 8 MB, booking documents at 15 MB
-  experimental: { serverActions: { bodySizeLimit: "16mb" } },
+  experimental: { agentUpgrade: "security", serverActions: { bodySizeLimit: "16mb" } },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
