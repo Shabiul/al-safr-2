@@ -14,7 +14,10 @@ let instance: Lenis | null = null;
 export const navBottom = () => document.querySelector("header")?.getBoundingClientRect().bottom ?? 0;
 
 /** smooth-scroll to an element through Lenis (a plain window.scrollTo gets overridden by it) */
-export const scrollToEl = (el: HTMLElement, offset = 0) => instance?.scrollTo(el, { offset, duration: 1.4 });
+export const scrollToEl = (el: HTMLElement, offset = 0, onComplete?: () => void) => instance?.scrollTo(el, { offset, duration: 1.4, onComplete });
+
+/** jump straight there, no animation (used to correct a landing spot after the layout moved) */
+export const snapToEl = (el: HTMLElement, offset = 0) => instance?.scrollTo(el, { offset, immediate: true, force: true });
 
 export default function SmoothScroll() {
   const lenis = useRef<Lenis | null>(null);

@@ -6,7 +6,7 @@ import { sendBooking } from "@/app/(site)/actions";
 import { useSite } from "./ContentProvider";
 import { SendOnWhatsApp } from "./WhatsApp";
 import Coupon from "./Coupon";
-import { navBottom, scrollToEl } from "./SmoothScroll";
+import { navBottom, scrollToEl, snapToEl } from "./SmoothScroll";
 import { Reveal, Scramble } from "./ui";
 
 const CODES = [
@@ -55,9 +55,13 @@ export default function TravelLinks() {
       const i = ids.split(",").indexOf(id);
       if (!el || i < 0) return;
       el.scrollTo({ left: i * el.clientWidth, behavior: smooth ? "smooth" : "instant" });
-      // bring the section's heading and tabs just under the pinned navbar, not the form alone
-      const sec = document.getElementById("book");
-      if (sec) scrollToEl(sec, 80 - navBottom());
+      // always the same frame: the Trains / Flights / Hotels / Buses tabs sit just under the pinned navbar, the form below them.
+      // Images and reveal animations can still move things during the scroll, so the spot is re-checked when it lands.
+      const anchor = document.getElementById("book-tabs") ?? el;
+      const offset = () => -(navBottom() + 16);
+      scrollToEl(anchor, offset(), () => {
+        if (Math.abs(anchor.getBoundingClientRect().top + offset()) > 3) snapToEl(anchor, offset());
+      });
     };
     let first: ReturnType<typeof setTimeout> | undefined;
     if (location.hash.startsWith("#book-")) first = setTimeout(() => open(location.hash.replace("#book-", ""), false), 500);
@@ -113,7 +117,7 @@ export default function TravelLinks() {
         </div>
 
         {slides.length > 1 && (
-          <div role="tablist" className="mb-5 flex flex-wrap gap-2">
+          <div id="book-tabs" role="tablist" className="mb-5 flex flex-wrap gap-2">
             {slides.map((s, i) => (
               <button
                 key={s.id}
@@ -160,7 +164,7 @@ export default function TravelLinks() {
 
 /* ---------- shared form bits ---------- */
 
-const panel = "grid gap-10 rounded-[32px] border border-ice/10 bg-night p-6 shadow-[0_20px_50px_-30px_rgba(0,0,0,.35)] md:p-12";
+const panel = "grid gap-8 rounded-[32px] border border-ice/10 bg-night p-5 shadow-[0_20px_50px_-30px_rgba(0,0,0,.35)] md:p-8";
 const opt = "[&>option]:bg-ink";
 
 function Label({ text, children }: { text: string; children: React.ReactNode }) {
@@ -287,7 +291,7 @@ function BookingForm({ kind, children, cta, done }: { kind: "dummy" | "rail" | "
       </div>
     );
   return (
-    <form action={send} className="space-y-4">
+    <form action={send} className="space-y-3">
       <input type="hidden" name="kind" value={kind} />
       <input name="website" tabIndex={-1} autoComplete="off" aria-hidden className="hidden" />
       {children}
@@ -332,7 +336,7 @@ function DummyTicket({ f }: { f: Forms }) {
         </div>
       </div>
 
-      <div className="rounded-3xl border border-ice/10 bg-ink/40 p-5 md:p-7">
+      <div className="rounded-3xl border border-ice/10 bg-ink/40 p-5 md:p-6">
         <BookingForm kind="dummy" cta="Book" done="Our team will contact you on the number you gave, usually within 30 minutes.">
           <input type="hidden" name="trip" value={trip} />
           <Pills value={trip} options={["One Way", "Round Trip"]} onChange={setTrip} />
@@ -506,7 +510,7 @@ function Hotel({ f }: { f: Forms }) {
         <h3 className="mt-3 text-3xl font-bold leading-tight tracking-tight md:text-5xl">Hotels, villas &amp; apartments</h3>
         <p className="mx-auto mt-6 max-w-md text-sm text-ice/60">Tell us where and when. We compare stays and send you the best options and prices.</p>
       </div>
-      <div className="rounded-3xl border border-ice/10 bg-ink/40 p-5 md:p-7">
+      <div className="rounded-3xl border border-ice/10 bg-ink/40 p-5 md:p-6">
         <BookingForm kind="hotel" cta="Request hotel options" done="Our team will send hotel options and prices on the number you gave.">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
@@ -549,7 +553,7 @@ function Bus() {
         <h3 className="mt-3 text-3xl font-bold leading-tight tracking-tight md:text-5xl">Intercity &amp; overnight buses</h3>
         <p className="mx-auto mt-6 max-w-md text-sm text-ice/60">Give us the route and the day. We find the seats and confirm with you.</p>
       </div>
-      <div className="rounded-3xl border border-ice/10 bg-ink/40 p-5 md:p-7">
+      <div className="rounded-3xl border border-ice/10 bg-ink/40 p-5 md:p-6">
         <BookingForm kind="bus" cta="Request bus seats" done="Our team will confirm bus options and fares on the number you gave.">
           <div className="grid gap-4 sm:grid-cols-2">
             <Label text="From">

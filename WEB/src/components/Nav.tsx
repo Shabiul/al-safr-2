@@ -202,6 +202,7 @@ export default function Nav() {
 /** the two choices a service offers: redirect to instant booking, or send a request (the on-site form, saved as a CRM lead) */
 function Choices({ id, label, cfg, wa, done }: { id: string; label: string; cfg: BookLink; wa: string; done: () => void }) {
   const row = "block rounded-2xl px-4 py-3 text-left transition-colors hover:bg-ice/10";
+  const home = usePathname() === "/";
   return (
     <>
       {cfg.url && (
@@ -215,15 +216,18 @@ function Choices({ id, label, cfg, wa, done }: { id: string; label: string; cfg:
           <span className="mt-0.5 block text-xs text-ice/60">{cfg.instantNote}</span>
         </a>
       )}
-      <Link
-        role="menuitem"
-        href={`/#book-${id}`}
-        onClick={() => {
-          window.dispatchEvent(new CustomEvent("book-tab", { detail: id }));
-          done();
-        }}
-        className={row}
-      >
+      {/* on the home page: switch the slider and scroll, without a hash link (Next and Lenis both handle those, which doubled the #… in the URL) */}
+      {home ? (
+        <button
+          type="button"
+          role="menuitem"
+          onClick={() => {
+            history.replaceState(history.state, "", `/#book-${id}`);
+            window.dispatchEvent(new CustomEvent("book-tab", { detail: id }));
+            done();
+          }}
+          className={`${row} w-full`}
+        >
         <span className="flex items-center justify-between gap-3 text-sm font-semibold text-ice">
           <span>✉ {cfg.requestTitle}</span>
           <span aria-hidden className="text-glow">
@@ -231,7 +235,18 @@ function Choices({ id, label, cfg, wa, done }: { id: string; label: string; cfg:
           </span>
         </span>
         <span className="mt-0.5 block text-xs text-ice/60">{cfg.requestNote}</span>
-      </Link>
+        </button>
+      ) : (
+        <Link role="menuitem" href={`/#book-${id}`} onClick={done} className={row}>
+        <span className="flex items-center justify-between gap-3 text-sm font-semibold text-ice">
+          <span>✉ {cfg.requestTitle}</span>
+          <span aria-hidden className="text-glow">
+            →
+          </span>
+        </span>
+        <span className="mt-0.5 block text-xs text-ice/60">{cfg.requestNote}</span>
+        </Link>
+      )}
       {wa && (
         <a
           role="menuitem"
