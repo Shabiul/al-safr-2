@@ -59,7 +59,7 @@ export function DepartureBoard() {
   const rows = all.slice(page * ROWS, page * ROWS + ROWS);
 
   useEffect(() => {
-    const tick = () => setClock(new Date().toLocaleTimeString("en-GB", { timeZone: "Asia/Dubai", hour: "2-digit", minute: "2-digit" }));
+    const tick = () => setClock(new Date().toLocaleTimeString("en-GB", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit" }));
     tick();
     const id = setInterval(tick, 10000);
     return () => clearInterval(id);
@@ -123,8 +123,8 @@ export function DepartureBoard() {
 
       <div className="overflow-x-auto rounded-[28px] bg-[#0d1622] p-5 text-[#f5c46b] shadow-[0_30px_80px_-30px_rgba(11,26,43,.6)] md:p-8" data-lenis-prevent>
         <div className="mb-5 flex items-center justify-between font-mono text-xs tracking-[0.25em] text-white/60">
-          <span>✈ DEPARTURES · AL SAFR DXB</span>
-          <span className="tabular-nums">{clock} GST</span>
+          <span>✈ DEPARTURES · AL-SAFAR BLR</span>
+          <span className="tabular-nums">{clock} IST</span>
         </div>
         <div className="min-w-[560px] font-mono" style={{ perspective: 400 }}>
           <div className="mb-2 flex gap-4 text-[10px] tracking-[0.25em] text-white/40">

@@ -1,7 +1,7 @@
 "use client";
 
 // Adapted from "Animated Testimonials" by bankkroll on 21st.dev (https://21st.dev/r/bankkroll/animated-testimonials):
-// restyled for Al Safr, framer-motion → motion, avatars swapped for initials, progress bar on the active dot, links to the tour.
+// restyled for Al-Safar, framer-motion → motion, avatars swapped for initials, progress bar on the active dot, links to the tour.
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion, useInView } from "motion/react";

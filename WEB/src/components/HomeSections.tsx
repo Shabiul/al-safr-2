@@ -241,7 +241,7 @@ export function Included() {
             Everything included. Really everything.
           </Reveal>
         </div>
-        <p className="max-w-sm text-ice/60">One price, one booking, one point of contact. Here is what every Al Safr package covers.</p>
+        <p className="max-w-sm text-ice/60">One price, one booking, one point of contact. Here is what every Al-Safar package covers.</p>
       </div>
 
       <div data-grid className="grid gap-px overflow-hidden rounded-3xl border border-ice/10 bg-ice/10 [perspective:1000px] sm:grid-cols-2 lg:grid-cols-4">

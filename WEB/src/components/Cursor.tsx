@@ -52,13 +52,13 @@ export default function Cursor() {
     <>
       <div
         ref={ring}
-        className="pointer-events-none fixed left-0 top-0 z-[90] -ml-5 -mt-5 flex size-10 items-center justify-center rounded-full border border-glow/70 [@media(pointer:coarse)]:hidden"
+        className="pointer-events-none fixed left-0 top-0 z-[200] -ml-5 -mt-5 flex size-10 items-center justify-center rounded-full border-2 border-white shadow-[0_0_0_1.5px_rgba(8,20,32,.7),inset_0_0_0_1.5px_rgba(8,20,32,.7)] [@media(pointer:coarse)]:hidden"
       >
-        <span className="text-[6px] font-semibold uppercase tracking-[0.2em] text-ink">{label}</span>
+        <span className="text-[6px] font-semibold uppercase tracking-[0.2em] text-white">{label}</span>
       </div>
       <div
         ref={dot}
-        className="pointer-events-none fixed left-0 top-0 z-[91] -ml-[3px] -mt-[3px] size-1.5 rounded-full bg-glow [@media(pointer:coarse)]:hidden"
+        className="pointer-events-none fixed left-0 top-0 z-[201] -ml-1 -mt-1 size-2 rounded-full bg-glow ring-2 ring-white shadow-[0_0_0_3.5px_rgba(8,20,32,.6)] [@media(pointer:coarse)]:hidden"
       />
     </>
   );

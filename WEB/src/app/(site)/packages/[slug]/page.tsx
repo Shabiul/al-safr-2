@@ -13,7 +13,7 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps<"/packages/[slug]">): Promise<Metadata> {
   const slug = (await params).slug;
   const p = (await getSite()).packages.find((x) => x.slug === slug);
-  return p ? { title: `${p.title}, ${p.country} — Al Safr`, description: p.description } : {};
+  return p ? { title: `${p.title}, ${p.country} — Al-Safar`, description: p.description } : {};
 }
 
 export default async function PackagePage({ params }: PageProps<"/packages/[slug]">) {

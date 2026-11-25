@@ -102,7 +102,7 @@ export const updateStaff = (id: string, patch: Partial<{ active: boolean; role: 
 };
 
 export async function report() {
-  const [[totals], byService, byMonth, promos] = await Promise.all([
+  const [[totals], byService, byMonth, promos, coupons] = await Promise.all([
     sql<{ net: number; bookings: number; confirmed: number; leads: number; won: number; closed: number }[]>`
       select
         coalesce((select sum(case when type = 'payment' then amount else -amount end) from alsafr.payments), 0)::float8 as net,
@@ -120,6 +120,8 @@ export async function report() {
       from alsafr.payments where created_at > now() - interval '12 months' group by 1 order by 1`,
     sql<{ promoCode: string; n: number }[]>`
       select upper(promo_code) as promo_code, count(*)::int as n from alsafr.bookings where coalesce(promo_code, '') <> '' group by 1 order by 2 desc`,
+    sql<{ code: string; usedOn: string; packageTitle: string | null; uses: number; booked: number; lastUsed: string }[]>`
+      select code, used_on, package_title, uses, booked, last_used from alsafr.coupon_usage order by uses desc, last_used desc limit 100`,
   ]);
-  return { totals, byService: [...byService], byMonth: [...byMonth], promos: [...promos] };
+  return { totals, byService: [...byService], byMonth: [...byMonth], promos: [...promos], coupons: [...coupons] };
 }

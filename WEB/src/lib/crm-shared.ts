@@ -21,6 +21,12 @@ export type Lead = {
   notes: string;
   stage: Stage;
   activity: Activity[];
+  /** coupons used on this enquiry, e.g. "EARLY27 (10% off) on Package"; from alsafr.coupon_uses */
+  coupons: string[];
 };
 
-export type LeadInput = Pick<Lead, "name" | "email" | "phone" | "source" | "packageSlug" | "departure" | "travellers" | "notes"> & { value?: number };
+export type LeadInput = Pick<Lead, "name" | "email" | "phone" | "source" | "packageSlug" | "departure" | "travellers" | "notes"> & {
+  value?: number;
+  /** recorded in alsafr.coupon_uses, linked to the lead */
+  coupon?: { code: string; discount: string; usedOn: string };
+};

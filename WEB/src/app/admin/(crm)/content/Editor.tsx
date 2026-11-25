@@ -130,7 +130,7 @@ const swap = <T,>(a: T[], i: number, j: number) => {
   return b;
 };
 
-const WIDE = new Set(["textarea", "lines", "itinerary", "route", "images", "packages", "image"]);
+const WIDE = new Set(["textarea", "lines", "itinerary", "route", "images", "packages", "image", "checks"]);
 
 function FieldInput({ f, value, onChange, packages }: { f: Field; value: Draft[string]; onChange: (v: Draft[string]) => void; packages: Opt[] }) {
   const s = typeof value === "string" ? value : "";
@@ -180,6 +180,27 @@ function FieldInput({ f, value, onChange, packages }: { f: Field; value: Draft[s
         </div>
       );
       break;
+    case "checks":
+      control = (
+        <div className="flex flex-wrap gap-2">
+          {f.options!.map((o) => {
+            const on = arr.includes(o);
+            return (
+              <button
+                key={o}
+                type="button"
+                aria-pressed={on}
+                onClick={() => onChange(on ? arr.filter((x) => x !== o) : [...arr, o])}
+                className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${on ? "border-glow bg-glow/15 font-semibold text-glow" : "border-ice/15 text-ice/70 hover:border-glow"}`}
+              >
+                {on ? "✓ " : ""}
+                {o}
+              </button>
+            );
+          })}
+        </div>
+      );
+      break;
     case "packages":
       control = (
         <div className="space-y-2">
@@ -225,7 +246,7 @@ function FieldInput({ f, value, onChange, packages }: { f: Field; value: Draft[s
       );
   }
   return (
-    <label className={`block ${WIDE.has(f.type) ? "md:col-span-2" : ""}`} onClick={(e) => f.type === "bool" && e.preventDefault()}>
+    <label className={`block ${WIDE.has(f.type) ? "md:col-span-2" : ""}`} onClick={(e) => (f.type === "bool" || f.type === "checks") && e.preventDefault()}>
       <span className="mb-1.5 block text-xs text-ice/60">
         {f.label}
         {f.required && " *"}

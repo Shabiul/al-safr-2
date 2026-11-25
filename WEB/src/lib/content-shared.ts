@@ -1,11 +1,11 @@
 // Everything on the public site that the CRM can edit. Client-safe (no Node APIs).
 // The values in src/data/* are only the defaults; once the team saves a section, alsafr.content wins.
 import { featured as defaultFeatured, packages as defaultPackages, type Package } from "@/data/packages";
-import { ALERTS, BOOKING_FORMS, EVENTS, HOT_DEAL_ENDS, NEWS, NOTIFICATIONS, PROMOS, type Alert, type BookingForms, type Event, type News, type Note, type Promo } from "@/data/updates";
+import { ALERTS, BOOKING_FORMS, BOOK_LINKS, EVENTS, HOT_DEAL_ENDS, NEWS, NOTIFICATIONS, PROMOS, type Alert, type BookingForms, type BookLink, type Event, type News, type Note, type Promo } from "@/data/updates";
 import { DEFAULT_PREFS, type Prefs } from "./theme-boot";
 import { img } from "@/data/img";
 
-export type Settings = { heroImage: string; hotDealEnds: string; featured: string[] };
+export type Settings = { heroImage: string; hotDealEnds: string; featured: string[]; whatsapp?: string };
 
 export type Content = {
   packages: Package[];
@@ -15,6 +15,7 @@ export type Content = {
   news: News[];
   events: Event[];
   forms: BookingForms;
+  bookLinks: BookLink[];
   display: Prefs;
   settings: Settings;
 };
@@ -27,6 +28,7 @@ export const DEFAULT_CONTENT: Content = {
   news: NEWS,
   events: EVENTS,
   forms: BOOKING_FORMS,
+  bookLinks: BOOK_LINKS,
   display: DEFAULT_PREFS,
   settings: { heroImage: img("1514958566123-9ec36678c8c6", 2400), hotDealEnds: HOT_DEAL_ENDS, featured: defaultFeatured.map((p) => p.slug) },
 };

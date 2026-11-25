@@ -111,6 +111,10 @@ export async function saveCollection(key: string, drafts: Draft[]): Promise<{ ok
         if (!(p.departures as unknown[]).length) throw new Error(`${p.title}: add at least one departure date`);
       }
     }
+    if (key === "bookLinks") {
+      const ids = items.map((x) => String(x.id));
+      if (new Set(ids).size !== ids.length) throw new Error("Each service can only be listed once");
+    }
     await writeContent(c.key, (c.single ? items[0] : items) as never, me.name);
   } catch (e) {
     return { ok: false, error: (e as Error).message };

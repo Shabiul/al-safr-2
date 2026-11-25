@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { gsap, useGSAP } from "@/lib/gsap";
 import { useIntroDone } from "@/lib/intro";
 import { Magnetic, RollText, Scramble } from "./ui";
-import { BOOKING_FORMS, BOOK_TABS } from "@/data/updates";
+import { BOOKING_FORMS, BOOK_LINKS, BOOK_TABS, type BookLink } from "@/data/updates";
 import { useSite } from "./ContentProvider";
 import { NotificationBell } from "./SiteChrome";
 
@@ -24,13 +24,25 @@ export default function Nav() {
   const [open, setOpen] = useState(false);
   const introDone = useIntroDone();
   const pathname = usePathname();
-  // Flights / Hotels / Buses / Trains: each opens its request form in the "Book it yourself" slider (switched on or off in the CRM)
-  const forms = { ...BOOKING_FORMS, ...useSite().forms };
-  const all = [
-    ...BOOK_TABS.filter((t) => forms[t.on]).map((t) => ({ href: `/#book-${t.id}`, label: t.label, tab: t.id as string })),
-    ...links.map((l) => ({ ...l, tab: "" })),
-  ];
-  const openTab = (tab: string) => tab && window.dispatchEvent(new CustomEvent("book-tab", { detail: tab }));
+  // Flights / Hotels / Buses / Trains: clicking one offers instant booking (redirect) or a request (on-site form -> CRM lead).
+  // Which services show, their links and their wording are all managed in the CRM (Website content).
+  const site = useSite();
+  const forms = { ...BOOKING_FORMS, ...site.forms };
+  const services = BOOK_TABS.filter((t) => forms[t.on]).map((t) => ({ id: t.id, label: t.label, cfg: site.bookLinks?.find((b) => b.id === t.id) ?? BOOK_LINKS.find((b) => b.id === t.id)! }));
+  const wa = (site.settings.whatsapp ?? "").replace(/\D/g, "");
+  const [svc, setSvc] = useState<string | null>(null);
+  const pick = () => setSvc(null);
+  useEffect(() => {
+    if (!svc) return;
+    const away = (e: PointerEvent) => !(e.target as Element).closest("[data-svc]") && setSvc(null);
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && setSvc(null);
+    document.addEventListener("pointerdown", away);
+    document.addEventListener("keydown", esc);
+    return () => {
+      document.removeEventListener("pointerdown", away);
+      document.removeEventListener("keydown", esc);
+    };
+  }, [svc]);
   // the fade behind the pill only shows once content is scrolling under it (it would tint the hero photo)
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
@@ -81,12 +93,33 @@ export default function Nav() {
             <span className="relative size-6 rotate-45 border border-glow">
               <span className="absolute inset-1 bg-glow/60" />
             </span>
-            <Scramble className="label text-[13px] font-semibold leading-none text-ice">AL SAFR</Scramble>
+            <Scramble className="label text-[13px] font-semibold leading-none text-ice">AL-SAFAR</Scramble>
           </Link>
           <ul className="hidden items-center gap-6 xl:flex xl:gap-7">
-            {all.map((l) => (
+            {services.map((v) => (
+              <li key={v.id} data-svc className="relative">
+                <button
+                  type="button"
+                  onClick={() => setSvc(svc === v.id ? null : v.id)}
+                  aria-expanded={svc === v.id}
+                  aria-haspopup="menu"
+                  className="label flex items-center gap-1.5 leading-none text-ice/80 hover:text-ice"
+                >
+                  {v.label}
+                  <span aria-hidden className={`text-[9px] transition-transform ${svc === v.id ? "rotate-180" : ""}`}>
+                    ▾
+                  </span>
+                </button>
+                {svc === v.id && (
+                  <div role="menu" className="frost-glass absolute left-1/2 top-full z-10 mt-5 w-80 -translate-x-1/2 rounded-3xl p-2">
+                    <Choices id={v.id} label={v.label} cfg={v.cfg} wa={wa} done={pick} />
+                  </div>
+                )}
+              </li>
+            ))}
+            {links.map((l) => (
               <li key={l.href}>
-                <Link href={l.href} onClick={() => openTab(l.tab)} className="label flex items-center leading-none text-ice/80 hover:text-ice">
+                <Link href={l.href} className="label flex items-center leading-none text-ice/80 hover:text-ice">
                   <RollText>{l.label}</RollText>
                 </Link>
               </li>
@@ -117,26 +150,106 @@ export default function Nav() {
 
       <div
         ref={menu}
-        className="fixed inset-0 z-[45] hidden flex-col justify-center gap-4 bg-night px-8"
+        className="fixed inset-0 z-[45] hidden flex-col gap-4 overflow-y-auto bg-night px-8 py-24 [&>*:first-child]:mt-auto [&>*:last-child]:mb-auto"
         style={{ clipPath: "circle(0% at 100% 0%)" }}
       >
-        {all.map((l, i) => (
+        {services.map((v, i) => (
+          <div key={v.id} data-svc>
+            <div className="overflow-hidden">
+              <button
+                data-menu-item
+                type="button"
+                onClick={() => setSvc(svc === v.id ? null : v.id)}
+                aria-expanded={svc === v.id}
+                className="flex w-full items-baseline gap-4 text-left text-4xl font-light sm:text-5xl"
+              >
+                <span className="label text-glow">0{i + 1}</span>
+                {v.label}
+                <span aria-hidden className={`ml-auto self-center text-base transition-transform ${svc === v.id ? "rotate-180" : ""}`}>
+                  ▾
+                </span>
+              </button>
+            </div>
+            {svc === v.id && (
+              <div className="mt-2 rounded-3xl border border-ice/10 p-2">
+                <Choices
+                  id={v.id}
+                  label={v.label}
+                  cfg={v.cfg}
+                  wa={wa}
+                  done={() => {
+                    pick();
+                    setOpen(false);
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        ))}
+        {links.map((l, i) => (
           <div key={l.href} className="overflow-hidden">
-            <Link
-              data-menu-item
-              href={l.href}
-              onClick={() => {
-                setOpen(false);
-                openTab(l.tab);
-              }}
-              className="flex items-baseline gap-4 text-4xl font-light sm:text-5xl"
-            >
-              <span className="label text-glow">0{i + 1}</span>
+            <Link data-menu-item href={l.href} onClick={() => setOpen(false)} className="flex items-baseline gap-4 text-4xl font-light sm:text-5xl">
+              <span className="label text-glow">0{services.length + i + 1}</span>
               {l.label}
             </Link>
           </div>
         ))}
       </div>
+    </>
+  );
+}
+
+/** the two choices a service offers: redirect to instant booking, or send a request (the on-site form, saved as a CRM lead) */
+function Choices({ id, label, cfg, wa, done }: { id: string; label: string; cfg: BookLink; wa: string; done: () => void }) {
+  const row = "block rounded-2xl px-4 py-3 text-left transition-colors hover:bg-ice/10";
+  return (
+    <>
+      {cfg.url && (
+        <a role="menuitem" href={cfg.url} target="_blank" rel="noopener noreferrer" onClick={done} className={row}>
+          <span className="flex items-center justify-between gap-3 text-sm font-semibold text-ice">
+            <span>⚡ {cfg.instantTitle}</span>
+            <span aria-hidden className="text-glow">
+              ↗
+            </span>
+          </span>
+          <span className="mt-0.5 block text-xs text-ice/60">{cfg.instantNote}</span>
+        </a>
+      )}
+      <Link
+        role="menuitem"
+        href={`/#book-${id}`}
+        onClick={() => {
+          window.dispatchEvent(new CustomEvent("book-tab", { detail: id }));
+          done();
+        }}
+        className={row}
+      >
+        <span className="flex items-center justify-between gap-3 text-sm font-semibold text-ice">
+          <span>✉ {cfg.requestTitle}</span>
+          <span aria-hidden className="text-glow">
+            →
+          </span>
+        </span>
+        <span className="mt-0.5 block text-xs text-ice/60">{cfg.requestNote}</span>
+      </Link>
+      {wa && (
+        <a
+          role="menuitem"
+          href={`https://wa.me/${wa}?text=${encodeURIComponent(`Hi Al-Safar, I'd like help with ${label.toLowerCase()}.`)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={done}
+          className={row}
+        >
+          <span className="flex items-center justify-between gap-3 text-sm font-semibold text-ice">
+            <span>💬 Chat on WhatsApp</span>
+            <span aria-hidden className="text-glow">
+              ↗
+            </span>
+          </span>
+          <span className="mt-0.5 block text-xs text-ice/60">Talk to our Bangalore team right now</span>
+        </a>
+      )}
     </>
   );
 }

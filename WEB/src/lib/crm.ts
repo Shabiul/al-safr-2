@@ -13,7 +13,11 @@ const withActivity = () => sql`
   select l.*, coalesce((
     select json_agg(json_build_object('at', a.at, 'text', a.text, 'staffName', a.staff_name) order by a.at desc, a.id desc)
     from alsafr.lead_activity a where a.lead_id = l.id
-  ), '[]') as activity
+  ), '[]') as activity,
+  coalesce((
+    select array_agg(c.code || case when c.discount <> '' then ' (' || c.discount || ')' else '' end || ' on ' || c.used_on order by c.created_at)
+    from alsafr.coupon_uses c where c.lead_id = l.id
+  ), '{}') as coupons
   from alsafr.leads l`;
 
 export const listLeads = async () => [...(await sql<Lead[]>`${withActivity()} order by l.created_at desc`)];
@@ -45,6 +49,10 @@ export async function createLead(input: LeadInput, staffName?: string) {
     with l as (insert into alsafr.leads ${sql(row)} returning id)
     insert into alsafr.lead_activity (lead_id, text, staff_name) select id, ${text}, ${staffName ?? null} from l
     returning lead_id as id`;
+  if (input.coupon) {
+    const k = input.coupon;
+    await sql`insert into alsafr.coupon_uses ${sql({ leadId: lead.id, code: k.code, discount: k.discount, usedOn: k.usedOn, packageSlug: row.packageSlug, packageTitle: row.packageTitle })}`;
+  }
   return lead;
 }
 

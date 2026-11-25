@@ -4,11 +4,14 @@ import { useActionState, useEffect, useRef, useState, useSyncExternalStore } fro
 import { BOOKING_FORMS, BOOK_TABS } from "@/data/updates";
 import { sendBooking } from "@/app/(site)/actions";
 import { useSite } from "./ContentProvider";
+import { SendOnWhatsApp } from "./WhatsApp";
+import Coupon from "./Coupon";
+import { navBottom, scrollToEl } from "./SmoothScroll";
 import { Reveal, Scramble } from "./ui";
 
 const CODES = [
-  ["+971", "UAE"],
   ["+91", "India"],
+  ["+971", "UAE"],
   ["+92", "Pakistan"],
   ["+880", "Bangladesh"],
   ["+63", "Philippines"],
@@ -50,12 +53,20 @@ export default function TravelLinks() {
     const open = (id: string, smooth: boolean) => {
       const el = track.current;
       const i = ids.split(",").indexOf(id);
-      if (el && i >= 0) el.scrollTo({ left: i * el.clientWidth, behavior: smooth ? "smooth" : "instant" });
+      if (!el || i < 0) return;
+      el.scrollTo({ left: i * el.clientWidth, behavior: smooth ? "smooth" : "instant" });
+      // bring the section's heading and tabs just under the pinned navbar, not the form alone
+      const sec = document.getElementById("book");
+      if (sec) scrollToEl(sec, 80 - navBottom());
     };
-    open(location.hash.replace("#book-", ""), false);
+    let first: ReturnType<typeof setTimeout> | undefined;
+    if (location.hash.startsWith("#book-")) first = setTimeout(() => open(location.hash.replace("#book-", ""), false), 500);
     const on = (e: Event) => open((e as CustomEvent<string>).detail, true);
     window.addEventListener("book-tab", on);
-    return () => window.removeEventListener("book-tab", on);
+    return () => {
+      clearTimeout(first);
+      window.removeEventListener("book-tab", on);
+    };
   }, [ids]);
   if (!slides.length) return null;
 
@@ -123,7 +134,7 @@ export default function TravelLinks() {
           className="flex snap-x snap-mandatory items-start overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {slides.map((s) => (
-            <div key={s.id} id={`book-${s.id}`} className="w-full shrink-0 snap-center">
+            <div key={s.id} className="w-full shrink-0 snap-center">
               {s.node}
             </div>
           ))}
@@ -248,7 +259,7 @@ function Phone() {
   return (
     <div className="grid grid-cols-[8.5rem_1fr] gap-3">
       <Label text="Country code">
-        <select name="code" defaultValue="+971" className={`field ${opt}`}>
+        <select name="code" defaultValue="+91" className={`field ${opt}`}>
           {CODES.map(([c, n]) => (
             <option key={n} value={c}>
               {n} ({c})
@@ -272,6 +283,7 @@ function BookingForm({ kind, children, cta, done }: { kind: "dummy" | "rail" | "
         <span className="flex size-14 items-center justify-center rounded-full bg-glow text-2xl text-ink">✓</span>
         <p className="text-2xl font-semibold">Request received</p>
         <p className="max-w-sm text-sm text-ice/60">{done}</p>
+        <SendOnWhatsApp text={state.wa} />
       </div>
     );
   return (
@@ -279,6 +291,7 @@ function BookingForm({ kind, children, cta, done }: { kind: "dummy" | "rail" | "
       <input type="hidden" name="kind" value={kind} />
       <input name="website" tabIndex={-1} autoComplete="off" aria-hidden className="hidden" />
       {children}
+      <Coupon use={{ service: ({ dummy: "Flights", rail: "Trains", hotel: "Hotels", bus: "Buses" } as const)[kind] }} />
       {state.error && (
         <p role="alert" className="text-sm text-sand">
           {state.error}

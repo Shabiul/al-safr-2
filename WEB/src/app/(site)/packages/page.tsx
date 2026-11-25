@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import PackageSearchPage from "@/components/PackageSearch";
 
 export const metadata: Metadata = {
-  title: "Tours & holiday packages — Al Safr",
+  title: "Tours & holiday packages — Al-Safar",
   description: "Browse guided tours and complete holiday packages by destination, style, departure month and budget.",
 };
 

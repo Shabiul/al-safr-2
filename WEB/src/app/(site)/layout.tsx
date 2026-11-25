@@ -1,6 +1,7 @@
 import SmoothScroll from "@/components/SmoothScroll";
 import Preloader from "@/components/Preloader";
 import Cursor from "@/components/Cursor";
+import WhatsApp from "@/components/WhatsApp";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import ContentProvider from "@/components/ContentProvider";
@@ -14,6 +15,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       <AlertBar />
       <SmoothScroll />
       <Cursor />
+      <WhatsApp />
       <Nav />
       {children}
       <Footer />

@@ -27,7 +27,7 @@ const ANCHORS = CALLOUTS.map((c) => c.anchor);
 function Clock() {
   const [t, setT] = useState("--:--:--");
   useEffect(() => {
-    const tick = () => setT(new Date().toLocaleTimeString("en-GB", { timeZone: "Asia/Dubai" }));
+    const tick = () => setT(new Date().toLocaleTimeString("en-GB", { timeZone: "Asia/Kolkata" }));
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
@@ -131,12 +131,12 @@ export default function Hero() {
         <div className="flex items-start justify-between gap-6">
           <div>
             <Link href="/" className="pointer-events-auto block font-wide text-3xl font-extrabold tracking-tight md:text-4xl">
-              AL SAFR
+              AL-SAFAR
             </Link>
             <p className="label mt-4 text-[11px] font-semibold normal-case leading-relaxed tracking-[0.04em] text-white/85">
               <span data-scramble>{"// Copyright © 2026"}</span>
               <br />
-              Al Safr Holidays, Dubai.
+              Al-Safar Holidays, Bangalore.
               <br />
               All journeys handled.
             </p>
@@ -184,7 +184,7 @@ export default function Hero() {
           <div data-fade className="hidden text-right md:block">
             <p className="label text-[11px] normal-case tracking-[0.04em] text-white/70">25.2048°N 55.2708°E</p>
             <p className="label mt-1 text-[11px] normal-case tracking-[0.04em] text-white/70">
-              Dubai desk · <Clock /> GST · next departure {formatDate(nextDeparture)}
+              Bangalore desk · <Clock /> IST · next departure {formatDate(nextDeparture)}
             </p>
             <Link
               href="/packages"

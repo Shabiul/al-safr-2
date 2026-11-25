@@ -25,7 +25,7 @@ try {
     returning email, role, (xmax = 0) as created`;
   writeFileSync(
     new URL("../admin-credentials.txt", import.meta.url),
-    `Al Safr CRM - super admin login\nSign in at: http://localhost:3000/admin\nEmail:    ${row.email}\nPassword: ${password}\n\nChange it any time: CRM -> Staff -> Reset password. Delete this file once the password is saved somewhere safe.\n`,
+    `Al-Safar CRM - super admin login\nSign in at: http://localhost:3000/admin\nEmail:    ${row.email}\nPassword: ${password}\n\nChange it any time: CRM -> Staff -> Reset password. Delete this file once the password is saved somewhere safe.\n`,
   );
   console.log(`${row.created ? "created" : "reset"} ${row.email} (${row.role}); login saved to admin-credentials.txt`);
 } finally {

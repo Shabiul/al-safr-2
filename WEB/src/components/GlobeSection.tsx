@@ -68,7 +68,7 @@ export default function GlobeSection() {
         <div>
           <Scramble className="label mb-4 block text-glow">[ 04 ] Destinations</Scramble>
           <Reveal as="h2" type="words" className="text-5xl font-semibold leading-[0.9] tracking-tight md:text-7xl">
-            One desk in Dubai. The whole world on it.
+            One desk in Bangalore. The whole world on it.
           </Reveal>
 
           <ul className="mt-10 grid grid-cols-2 gap-x-6 border-t border-ice/10">

@@ -1,8 +1,9 @@
 // Field lists for every editable collection. The CRM renders its forms from these, and the save
 // action converts + validates with the same lists, so the two can't drift apart. Client-safe.
 import type { Content } from "./content-shared";
+import { PROMO_SCOPES } from "@/data/updates";
 
-export type FieldType = "text" | "textarea" | "number" | "date" | "datetime" | "bool" | "select" | "image" | "images" | "lines" | "itinerary" | "route" | "coords" | "packages" | "url";
+export type FieldType = "text" | "textarea" | "number" | "date" | "datetime" | "bool" | "select" | "image" | "images" | "lines" | "itinerary" | "route" | "coords" | "packages" | "url" | "checks";
 export type Field = { key: string; label: string; type: FieldType; options?: readonly string[]; hint?: string; required?: boolean; optional?: boolean };
 /** what the form holds: plain strings for text-like fields, arrays for image lists / package picks */
 export type Draft = Record<string, string | boolean | string[]>;
@@ -67,8 +68,10 @@ export const COLLECTIONS: { key: CollectionKey; title: string; sub: string; sing
       { key: "title", label: "Title", type: "text", required: true },
       { key: "detail", label: "Who it's for", type: "text" },
       { key: "off", label: "Discount label", type: "text", hint: "e.g. 10% off or $200 off" },
-      { key: "endsAt", label: "Ends at (Dubai time)", type: "datetime" },
+      { key: "endsAt", label: "Ends at (India time)", type: "datetime" },
       { key: "href", label: "Link", type: "text" },
+      { key: "validFor", label: "Valid for", type: "checks", options: PROMO_SCOPES, hint: "tick All (global) for every service and package; otherwise tick services and/or tour categories" },
+      { key: "packages", label: "Also valid on these specific packages", type: "packages", hint: "optional; adds single tours on top of the ticks above" },
     ],
   },
   {
@@ -81,7 +84,7 @@ export const COLLECTIONS: { key: CollectionKey; title: string; sub: string; sing
       { key: "title", label: "Title", type: "text", required: true },
       { key: "body", label: "Text", type: "text" },
       { key: "kind", label: "Kind", type: "select", options: ["price", "departure", "event", "news"] },
-      { key: "when", label: "Posted at (Dubai time)", type: "datetime" },
+      { key: "when", label: "Posted at (India time)", type: "datetime" },
       { key: "href", label: "Link", type: "text" },
     ],
   },
@@ -112,6 +115,20 @@ export const COLLECTIONS: { key: CollectionKey; title: string; sub: string; sing
       { key: "body", label: "Text", type: "textarea" },
       { key: "image", label: "Photo", type: "image", required: true },
       { key: "href", label: "Link", type: "text" },
+    ],
+  },
+  {
+    key: "bookLinks",
+    title: "Navbar service menus",
+    sub: "Clicking Flights, Hotels, Buses or Trains in the navbar shows two choices: instant booking (redirects to your link) and a request (the on-site form, saved as a lead). Leave the link empty to show only the request.",
+    titleKey: "id",
+    fields: [
+      { key: "id", label: "Service", type: "select", options: ["flights", "hotels", "buses", "trains"], required: true },
+      { key: "url", label: "Instant booking link (opens in a new tab)", type: "url", optional: true, hint: "full https:// address, e.g. your affiliate link; empty = no instant option" },
+      { key: "instantTitle", label: "Instant booking: title", type: "text" },
+      { key: "instantNote", label: "Instant booking: description", type: "text" },
+      { key: "requestTitle", label: "Request: title", type: "text" },
+      { key: "requestNote", label: "Request: description", type: "text" },
     ],
   },
   {
@@ -163,7 +180,8 @@ export const COLLECTIONS: { key: CollectionKey; title: string; sub: string; sing
     titleKey: "heroImage",
     fields: [
       { key: "heroImage", label: "Hero background photo", type: "image", required: true },
-      { key: "hotDealEnds", label: "Hot deals end at (Dubai time)", type: "datetime" },
+      { key: "hotDealEnds", label: "Hot deals end at (India time)", type: "datetime" },
+      { key: "whatsapp", label: "WhatsApp number", type: "text", optional: true, hint: "country code + number, digits only, e.g. 919876543210; empty hides every WhatsApp button" },
       { key: "featured", label: "Featured packages", type: "packages", hint: "shown in this order on the home page" },
     ],
   },
@@ -171,7 +189,7 @@ export const COLLECTIONS: { key: CollectionKey; title: string; sub: string; sing
 
 export const collection = (key: string) => COLLECTIONS.find((c) => c.key === key);
 
-const TZ = "+04:00"; // dates are entered in Dubai time
+const TZ = "+05:30"; // dates are entered in India time
 const lines = (s: string) => s.split("\n").map((l) => l.trim()).filter(Boolean);
 const parts = (l: string) => l.split("|").map((x) => x.trim());
 const coords = (s: string): [number, number] => {
@@ -185,7 +203,7 @@ export function toDraft(fields: Field[], item: Record<string, unknown>): Draft {
   for (const f of fields) {
     const v = item[f.key];
     if (f.type === "bool") d[f.key] = !!v;
-    else if (f.type === "images" || f.type === "packages") d[f.key] = (v as string[] | undefined) ?? [];
+    else if (f.type === "images" || f.type === "packages" || f.type === "checks") d[f.key] = (v as string[] | undefined) ?? [];
     else if (f.type === "lines") d[f.key] = ((v as string[] | undefined) ?? []).join("\n");
     else if (f.type === "itinerary") d[f.key] = ((v as { title: string; desc: string }[] | undefined) ?? []).map((x) => `${x.title} | ${x.desc}`).join("\n");
     else if (f.type === "route")
@@ -244,6 +262,11 @@ export function fromDraft(fields: Field[], d: Draft, label: string): Record<stri
         if (s && !IMAGE_OK.test(s)) fail("must be an uploaded photo or an images.unsplash.com link");
         out[f.key] = s;
         break;
+      case "checks": {
+        const picked = (raw as string[]).filter((x) => f.options!.includes(x));
+        out[f.key] = picked.includes("All (global)") ? ["All (global)"] : picked;
+        break;
+      }
       case "images":
       case "packages": {
         const list = (raw as string[]).map((x) => x.trim()).filter(Boolean);

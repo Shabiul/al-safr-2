@@ -1,14 +1,32 @@
 "use server";
 
 import { createLead } from "@/lib/crm";
+import { getContent } from "@/lib/content";
+import { promoScope, promoValid, type PromoUse } from "@/data/updates";
 
-export type EnquiryState = { ok: boolean; error?: string };
+/** wa = pre-written WhatsApp message the visitor can send to the team right after submitting */
+export type EnquiryState = { ok: boolean; error?: string; wa?: string };
+
+const waText = (id: string, lines: (string | false | undefined)[]) =>
+  ["Hi Al-Safar, I just sent an enquiry on your website.", ...lines.filter(Boolean), `Ref: ${id.slice(0, 8)}`].join("\n");
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const text = (f: FormData, k: string, max: number) =>
   String(f.get(k) ?? "")
     .trim()
     .slice(0, max);
+
+/** the visitor's coupon, checked against the CRM's promo codes; returns the note line for the lead, or an error */
+async function coupon(f: FormData, use: PromoUse): Promise<{ line?: string; error?: string; data?: { code: string; discount: string; usedOn: string } }> {
+  const c = text(f, "coupon", 30).toUpperCase();
+  if (!c) return {};
+  const { promos, packages } = await getContent();
+  const p = promos.find((x) => x.code.toUpperCase() === c);
+  if (!p) return { error: "That coupon code isn't valid. Check it, or leave the box empty." };
+  if (p.endsAt && new Date(p.endsAt).getTime() < Date.now()) return { error: "That coupon code has expired. Leave the box empty to send without it." };
+  if (!promoValid(p, use)) return { error: `That coupon code can't be used here. ${promoScope(p, (s) => packages.find((x) => x.slug === s)?.title)}.` };
+  return { line: `Coupon: ${p.code} (${p.off || p.title})`, data: { code: p.code.toUpperCase(), discount: p.off || p.title, usedOn: "service" in use ? use.service : "Package" } };
+}
 
 const PHONE = /^[0-9 ()-]{6,18}$/;
 const CODE = /^\+\d{1,4}$/;
@@ -74,7 +92,9 @@ export async function sendBooking(_: EnquiryState, f: FormData): Promise<Enquiry
               ["Date", `${date} ${text(f, "time", 5)}`.trim()],
               ["Nationality", text(f, "nationality", 40)],
             ];
-  await createLead({
+  const cp = await coupon(f, { service: ({ dummy: "Flights", rail: "Trains", hotel: "Hotels", bus: "Buses" } as const)[kind] });
+  if (cp.error) return { ok: false, error: cp.error };
+  const lead = await createLead({
     name: { dummy: "Flight / dummy ticket request", rail: "Rail request", hotel: "Hotel request", bus: "Bus request" }[kind],
     email: "",
     phone: `${code} ${phone}`,
@@ -82,12 +102,11 @@ export async function sendBooking(_: EnquiryState, f: FormData): Promise<Enquiry
     packageSlug: null,
     departure: date,
     travellers: Math.min(50, adults + others),
-    notes: rows
-      .filter(([, v]) => v)
-      .map(([k, v]) => `${k}: ${v}`)
-      .join("\n"),
+    notes: [...rows.filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`), ...(cp.line ? [cp.line] : [])].join("\n"),
+    coupon: cp.data,
   });
-  return { ok: true };
+  const label = { dummy: "Flights", rail: "Trains", hotel: "Hotels", bus: "Buses" }[kind];
+  return { ok: true, wa: waText(lead.id, [`Service: ${label}`, ...rows.filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`)]) };
 }
 
 /** public: the package page's enquiry form posts here and the lead lands in the CRM */
@@ -100,8 +119,12 @@ export async function sendEnquiry(_: EnquiryState, f: FormData): Promise<Enquiry
   if (!name) return { ok: false, error: "Please add your name." };
   if (!EMAIL.test(email)) return { ok: false, error: "That email doesn't look right." };
   if (!(travellers >= 1 && travellers <= 20)) return { ok: false, error: "Travellers must be between 1 and 20." };
+  const slug = text(f, "package", 120);
+  const pkg = (await getContent()).packages.find((x) => x.slug === slug);
+  const cp = await coupon(f, { pkg: { slug, category: pkg?.category ?? "" } });
+  if (cp.error) return { ok: false, error: cp.error };
   // ponytail: no rate limiting; put the site behind a WAF or add a per-IP limit if spam shows up
-  await createLead({
+  const lead = await createLead({
     name,
     email,
     phone: text(f, "phone", 40),
@@ -109,7 +132,8 @@ export async function sendEnquiry(_: EnquiryState, f: FormData): Promise<Enquiry
     packageSlug: text(f, "package", 120) || null,
     departure: text(f, "date", 40) || "Flexible",
     travellers,
-    notes: text(f, "notes", 2000),
+    notes: [text(f, "notes", 2000), cp.line].filter(Boolean).join("\n"),
+    coupon: cp.data,
   });
-  return { ok: true };
+  return { ok: true, wa: waText(lead.id, [`Name: ${name}`, pkg && `Package: ${pkg.title}, ${pkg.country}`, `Date: ${text(f, "date", 40) || "Flexible"}`, `Travellers: ${travellers}`]) };
 }

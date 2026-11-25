@@ -22,9 +22,11 @@ import {
 import dynamic from "next/dynamic";
 import { navBottom, scrollToEl } from "./SmoothScroll";
 import { sendEnquiry } from "@/app/(site)/actions";
+import { SendOnWhatsApp } from "./WhatsApp";
 
 const RouteMap = dynamic(() => import("./RouteMap"), { ssr: false, loading: () => <div className="h-[380px] animate-pulse rounded-2xl bg-ice/5 md:h-[460px]" /> });
 import { Magnetic, RollText, Scramble } from "./ui";
+import Coupon from "./Coupon";
 
 const money = (n: number) => `$${n.toLocaleString("en-US")}`;
 
@@ -509,6 +511,7 @@ function Enquiry({ p }: { p: Package }) {
           <p className="text-4xl">✦</p>
           <p className="mt-3 text-xl font-semibold">Enquiry sent</p>
           <p className="mt-2 text-sm text-ice/60">A travel designer will reply within 24 hours.</p>
+          <SendOnWhatsApp text={state.wa} />
           <button onClick={() => setEditing(true)} className="label mt-5 text-glow hover:underline">
             Send another
           </button>
@@ -544,6 +547,7 @@ function Enquiry({ p }: { p: Package }) {
           <input name="email" type="email" required placeholder="Email" autoComplete="email" className="field" />
           <input name="phone" type="tel" placeholder="Phone / WhatsApp (optional)" autoComplete="tel" className="field" />
           <textarea name="notes" rows={2} placeholder="Anything we should know?" className="field resize-none" />
+          <Coupon use={{ pkg: { slug: p.slug, category: p.category } }} />
           <div className="flex items-baseline justify-between pt-2">
             <span className="label text-frost/60">Estimated total</span>
             <span key={total} className="animate-[pop_.4s_ease-out] text-2xl font-light">

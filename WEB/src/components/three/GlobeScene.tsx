@@ -16,7 +16,7 @@ const PALETTE = {
 const usePalette = () => PALETTE[useTheme()];
 
 const R = 2;
-const HOME: [number, number] = [25.2, 55.27]; // Dubai HQ
+const HOME: [number, number] = [12.97, 77.59]; // Bangalore HQ
 
 function toVec(lat: number, lon: number, r = R) {
   const phi = ((90 - lat) * Math.PI) / 180;

@@ -5,7 +5,7 @@ import { currentStaff } from "@/lib/admin-auth";
 import { logout } from "../actions";
 import NavLinks, { Links } from "./NavLinks";
 
-export const metadata: Metadata = { title: "Al Safr CRM", robots: { index: false } };
+export const metadata: Metadata = { title: "Al-Safar CRM", robots: { index: false } };
 
 export default function CrmLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -14,7 +14,7 @@ export default function CrmLayout({ children }: { children: React.ReactNode }) {
         <Link href="/admin" className="flex shrink-0 items-center gap-2.5 md:mb-8">
           <span className="size-6 rotate-45 rounded-[5px] bg-glow" />
           <span className="font-semibold tracking-tight">
-            Al Safr <span className="text-ice/45">CRM</span>
+            Al-Safar <span className="text-ice/45">CRM</span>
           </span>
         </Link>
         {/* active link needs the URL, which is only known per request */}

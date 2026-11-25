@@ -10,7 +10,7 @@ const wide = Archivo({ variable: "--font-archivo", subsets: ["latin"], axes: ["w
 const serif = Instrument_Serif({ variable: "--font-instrument", subsets: ["latin"], weight: "400", style: ["normal", "italic"] });
 
 export const metadata: Metadata = {
-  title: "Al Safr — Complete Holiday Packages",
+  title: "Al-Safar — Complete Holiday Packages",
   description: "All-inclusive holiday packages: flights, stays, transfers and experiences, handled end to end.",
 };
 

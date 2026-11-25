@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { requireSuperAdmin } from "@/lib/admin-auth";
 import { report, SERVICE_LABEL, type Booking } from "@/lib/ops";
-import { card, Loading, money, PageHead } from "../../ui";
+import { card, Loading, money, PageHead, when } from "../../ui";
 
 export default function ReportsPage() {
   return (
@@ -16,7 +16,7 @@ export default function ReportsPage() {
 
 async function Report() {
   await requireSuperAdmin();
-  const { totals: t, byService, byMonth, promos } = await report();
+  const { totals: t, byService, byMonth, promos, coupons } = await report();
   const stats = [
     { label: "Net received", value: money(t.net), hint: "payments minus refunds" },
     { label: "Confirmed revenue", value: money(t.confirmed), hint: "confirmed + completed bookings" },
@@ -73,7 +73,39 @@ async function Report() {
         </section>
       </div>
       <section className={card}>
-        <h2 className="mb-4 font-semibold">Promo code usage</h2>
+        <h2 className="mb-1 font-semibold">Coupon codes used in enquiries</h2>
+        <p className="mb-4 text-xs text-ice/50">Every website enquiry that applied a coupon, by code and where it was used. Booked = the lead reached the Booked stage.</p>
+        {coupons.length ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="text-xs text-ice/50">
+                <tr>
+                  <th className="py-2 pr-4 font-normal">Code</th>
+                  <th className="py-2 pr-4 font-normal">Used on</th>
+                  <th className="py-2 pr-4 text-right font-normal">Enquiries</th>
+                  <th className="py-2 pr-4 text-right font-normal">Booked</th>
+                  <th className="py-2 font-normal">Last used</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-ice/8">
+                {coupons.map((c) => (
+                  <tr key={`${c.code}-${c.usedOn}-${c.packageTitle ?? ""}`}>
+                    <td className="py-2 pr-4 font-mono font-semibold">{c.code}</td>
+                    <td className="py-2 pr-4 text-ice/70">{c.packageTitle ?? c.usedOn}</td>
+                    <td className="py-2 pr-4 text-right tabular-nums">{c.uses}</td>
+                    <td className="py-2 pr-4 text-right tabular-nums">{c.booked}</td>
+                    <td className="py-2 text-ice/55">{when(new Date(c.lastUsed).toISOString())}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-sm text-ice/50">No enquiry has used a coupon yet.</p>
+        )}
+      </section>
+      <section className={card}>
+        <h2 className="mb-4 font-semibold">Promo code usage on bookings</h2>
         {promos.length ? (
           <ul className="divide-y divide-ice/8 text-sm">
             {promos.map((p) => (

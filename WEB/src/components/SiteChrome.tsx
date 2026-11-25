@@ -6,6 +6,7 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
 import { ScrollTrigger } from "@/lib/gsap";
 import { useIntroDone } from "@/lib/intro";
+import { promoScope } from "@/data/updates";
 import { useSite } from "./ContentProvider";
 
 /* ---------- small shared bits ---------- */
@@ -317,7 +318,7 @@ export function DealToast() {
 /* ---------- promo codes strip ---------- */
 
 export function PromoCodes() {
-  const { promos: PROMOS } = useSite();
+  const { promos: PROMOS, packages } = useSite();
   const [copied, setCopied] = useState<string | null>(null);
   const copy = async (code: string) => {
     try {
@@ -345,6 +346,7 @@ export function PromoCodes() {
                 <p className="text-3xl font-semibold text-sand">{p.off}</p>
                 <p className="mt-1 font-semibold">{p.title}</p>
                 <p className="text-sm text-ice/60">{p.detail}</p>
+                <p className="mt-2 text-xs font-medium text-glow">{promoScope(p, (s) => packages.find((x) => x.slug === s)?.title)}</p>
               </div>
               <span className="label rounded-full bg-sand/15 px-2.5 py-1 text-[10px] text-sand">Ends in <Countdown to={p.endsAt} compact /></span>
             </div>

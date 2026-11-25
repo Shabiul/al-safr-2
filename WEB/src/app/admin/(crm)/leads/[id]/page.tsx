@@ -31,6 +31,11 @@ async function Lead({ params }: Pick<PageProps<"/admin/leads/[id]">, "params">) 
         <span className="text-sm text-ice/50">
           {lead.source} · {when(lead.createdAt)}
         </span>
+        {lead.coupons.map((c) => (
+          <span key={c} className="rounded-full bg-sand/15 px-3 py-1 font-mono text-xs text-sand">
+            Coupon {c}
+          </span>
+        ))}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
@@ -112,7 +117,7 @@ async function Lead({ params }: Pick<PageProps<"/admin/leads/[id]">, "params">) 
             <Link href={`/admin/bookings/new?lead=${id}`} className={btn}>
               Create booking
             </Link>
-            <a href={`mailto:${lead.email}?subject=${encodeURIComponent(`Your Al Safr enquiry${lead.packageTitle ? `: ${lead.packageTitle}` : ""}`)}`} className={ghost}>
+            <a href={`mailto:${lead.email}?subject=${encodeURIComponent(`Your Al-Safar enquiry${lead.packageTitle ? `: ${lead.packageTitle}` : ""}`)}`} className={ghost}>
               ✉ Email {lead.name.split(" ")[0]}
             </a>
             {lead.phone && (
