@@ -4,7 +4,7 @@ import type { Content } from "./content-shared";
 import { PROMO_SCOPES } from "@/data/updates";
 
 export type FieldType = "text" | "textarea" | "number" | "date" | "datetime" | "bool" | "select" | "image" | "images" | "lines" | "itinerary" | "route" | "coords" | "packages" | "url" | "checks";
-export type Field = { key: string; label: string; type: FieldType; options?: readonly string[]; hint?: string; required?: boolean; optional?: boolean };
+export type Field = { key: string; label: string; type: FieldType; options?: readonly string[]; hint?: string; required?: boolean; optional?: boolean; /** bool only: value when nothing is stored yet */ defaultOn?: boolean };
 /** what the form holds: plain strings for text-like fields, arrays for image lists / package picks */
 export type Draft = Record<string, string | boolean | string[]>;
 
@@ -70,6 +70,8 @@ export const COLLECTIONS: { key: CollectionKey; title: string; sub: string; sing
       { key: "off", label: "Discount label", type: "text", hint: "e.g. 10% off or $200 off" },
       { key: "endsAt", label: "Ends at (India time)", type: "datetime" },
       { key: "href", label: "Link", type: "text" },
+      { key: "active", label: "Code is active (can be used)", type: "bool", defaultOn: true, hint: "off = refused in every form and hidden everywhere" },
+      { key: "visible", label: "Show on the website", type: "bool", defaultOn: true, hint: "off = private code: not listed, but still works when a customer types it" },
       { key: "validFor", label: "Valid for", type: "checks", options: PROMO_SCOPES, hint: "tick All (global) for every service and package; otherwise tick services and/or tour categories" },
       { key: "packages", label: "Also valid on these specific packages", type: "packages", hint: "optional; adds single tours on top of the ticks above" },
     ],
@@ -139,9 +141,9 @@ export const COLLECTIONS: { key: CollectionKey; title: string; sub: string; sing
     titleKey: "dummyHeadline",
     fields: [
       { key: "bgImage", label: "Section background photo", type: "image", optional: true, hint: "shown behind the whole Book it yourself section; leave empty for none" },
-      { key: "dummyEnabled", label: "Show the Flights (dummy ticket) form", type: "bool" },
-      { key: "hotelEnabled", label: "Show the Hotels form", type: "bool" },
-      { key: "busEnabled", label: "Show the Buses form", type: "bool" },
+      { key: "dummyEnabled", defaultOn: true, label: "Show the Flights (dummy ticket) form", type: "bool" },
+      { key: "hotelEnabled", defaultOn: true, label: "Show the Hotels form", type: "bool" },
+      { key: "busEnabled", defaultOn: true, label: "Show the Buses form", type: "bool" },
       { key: "hotelStars", label: "Hotel classes", type: "lines", hint: "one per line" },
       { key: "dummyEyebrow", label: "Small red heading", type: "text" },
       { key: "dummyHeadline", label: "Main heading", type: "text", required: true },
@@ -149,7 +151,9 @@ export const COLLECTIONS: { key: CollectionKey; title: string; sub: string; sing
       { key: "dummyTag", label: "Tag line", type: "text" },
       { key: "dummyBlurb", label: "Description", type: "textarea", hint: "one line per paragraph" },
       { key: "dummyClasses", label: "Travel classes", type: "lines", hint: "one per line" },
-      { key: "railEnabled", label: "Show the Trains (rail) form", type: "bool" },
+      { key: "railEnabled", defaultOn: true, label: "Show the Trains (rail) form", type: "bool" },
+      { key: "showPromoSection", label: "Show the Discount codes section on the home page", type: "bool", defaultOn: true },
+      { key: "showCouponField", label: "Show the coupon / discount code box in the forms", type: "bool", defaultOn: true },
       { key: "railNotice", label: "Nationality notice", type: "textarea", hint: "shown under Nationality or Residency" },
       { key: "railCountries", label: "Global rail: popular countries", type: "lines", hint: "one per line: Country | 2-letter code, e.g. Japan | jp" },
       { key: "railPassCountries", label: "Rail passes: countries to visit", type: "lines", hint: "one per line: Country | 2-letter code" },
@@ -202,7 +206,7 @@ export function toDraft(fields: Field[], item: Record<string, unknown>): Draft {
   const d: Draft = {};
   for (const f of fields) {
     const v = item[f.key];
-    if (f.type === "bool") d[f.key] = !!v;
+    if (f.type === "bool") d[f.key] = v === undefined || v === null ? !!f.defaultOn : !!v;
     else if (f.type === "images" || f.type === "packages" || f.type === "checks") d[f.key] = (v as string[] | undefined) ?? [];
     else if (f.type === "lines") d[f.key] = ((v as string[] | undefined) ?? []).join("\n");
     else if (f.type === "itinerary") d[f.key] = ((v as { title: string; desc: string }[] | undefined) ?? []).map((x) => `${x.title} | ${x.desc}`).join("\n");

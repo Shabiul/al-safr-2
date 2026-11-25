@@ -31,7 +31,7 @@ export default function Editor({ coll, initial, packages }: { coll: string; init
   };
   const set = (key: string, v: Draft[string]) => change(items.map((it, i) => (i === sel ? { ...it, [key]: v } : it)));
   const blank = useMemo(() => toDraft(c.fields, {}), [c.fields]);
-  const label = (it: Draft) => `${String(it[c.titleKey] || "Untitled")}${it.enabled === false ? " · off" : ""}`;
+  const label = (it: Draft) => `${String(it[c.titleKey] || "Untitled")}${it.enabled === false || it.active === false ? " · off" : it.visible === false ? " · hidden" : ""}`;
   const shown = items.map((it, i) => ({ it, i })).filter(({ it }) => !q || label(it).toLowerCase().includes(q.toLowerCase()));
 
   const save = () =>

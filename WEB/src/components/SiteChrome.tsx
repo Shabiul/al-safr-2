@@ -318,7 +318,10 @@ export function DealToast() {
 /* ---------- promo codes strip ---------- */
 
 export function PromoCodes() {
-  const { promos: PROMOS, packages } = useSite();
+  const site = useSite();
+  const { packages } = site;
+  // what the CRM allows to be listed: section switched on, code active and visible
+  const PROMOS = site.forms?.showPromoSection === false ? [] : site.promos.filter((p) => p.active !== false && p.visible !== false);
   const [copied, setCopied] = useState<string | null>(null);
   const copy = async (code: string) => {
     try {
@@ -327,6 +330,7 @@ export function PromoCodes() {
     setCopied(code);
     setTimeout(() => setCopied((c) => (c === code ? null : c)), 1800);
   };
+  if (!PROMOS.length) return null;
   return (
     <section className="mx-auto max-w-7xl px-5 pb-24 md:px-10">
       <p className="label mb-5 text-glow">[ % ] Discount codes</p>

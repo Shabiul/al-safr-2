@@ -22,7 +22,8 @@ async function coupon(f: FormData, use: PromoUse): Promise<{ line?: string; erro
   if (!c) return {};
   const { promos, packages } = await getContent();
   const p = promos.find((x) => x.code.toUpperCase() === c);
-  if (!p) return { error: "That coupon code isn't valid. Check it, or leave the box empty." };
+  // a switched-off code answers exactly like an unknown one
+  if (!p || p.active === false) return { error: "That coupon code isn't valid. Check it, or leave the box empty." };
   if (p.endsAt && new Date(p.endsAt).getTime() < Date.now()) return { error: "That coupon code has expired. Leave the box empty to send without it." };
   if (!promoValid(p, use)) return { error: `That coupon code can't be used here. ${promoScope(p, (s) => packages.find((x) => x.slug === s)?.title)}.` };
   return { line: `Coupon: ${p.code} (${p.off || p.title})`, data: { code: p.code.toUpperCase(), discount: p.off || p.title, usedOn: "service" in use ? use.service : "Package" } };

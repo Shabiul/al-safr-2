@@ -75,6 +75,10 @@ export type BookingForms = {
   dummyBlurb: string;
   dummyClasses: string[];
   railEnabled: boolean;
+  /** the "Discount codes" section on the home page */
+  showPromoSection: boolean;
+  /** the coupon / discount code box in every request form */
+  showCouponField: boolean;
   railNotice: string;
   /** "Country | iso2" per line: the quick picks under "Train Ticket (Global)" */
   railCountries: string[];
@@ -96,6 +100,8 @@ export const BOOKING_FORMS: BookingForms = {
   dummyBlurb: "Professional flight reservations for visa documentation.\nAccepted for visa applications, onward/return travel proof, visa extensions & passport renewal.",
   dummyClasses: ["Economy", "Business"],
   railEnabled: true,
+  showPromoSection: true,
+  showCouponField: true,
   railNotice: "Select your country of residence as nationality; booking with the wrong residency or nationality may lead to supplement charges to be paid directly to the rail operator by the guest.",
   railCountries: ["Saudi Arabia | sa", "Japan | jp", "Malaysia | my", "South Korea | kr", "Canada | ca", "United States | us", "Qatar | qa"],
   railPassCountries: ["Switzerland | ch", "France | fr", "Italy | it", "Germany | de", "Spain | es", "Austria | at", "Netherlands | nl", "Eurail Global Pass | eu"],
@@ -109,13 +115,27 @@ export const BOOKING_FORMS: BookingForms = {
  */
 export const PROMO_SCOPES = ["All (global)", "Trains", "Flights", "Hotels", "Buses", "All tour packages", "Beach", "Mountains", "City", "Adventure", "Culture"] as const;
 
-export type Promo = { code: string; title: string; detail: string; off: string; endsAt: string; href: string; validFor?: string[]; packages?: string[] };
+export type Promo = {
+  code: string;
+  title: string;
+  detail: string;
+  off: string;
+  endsAt: string;
+  href: string;
+  validFor?: string[];
+  packages?: string[];
+  /** listed in the "Discount codes" section; false = a private code that still works when typed (missing = true) */
+  visible?: boolean;
+  /** false = switched off: not shown and refused at checkout (missing = true) */
+  active?: boolean;
+};
 
 /** where the code is being used: a booking service, or a tour package */
 export type PromoUse = { service: "Trains" | "Flights" | "Hotels" | "Buses" } | { pkg: { slug: string; category: string } };
 
 /** shared by the coupon box and the server, so both give the same answer */
 export function promoValid(p: Promo, use: PromoUse): boolean {
+  if (p.active === false) return false;
   const scope = p.validFor ?? [];
   const only = p.packages ?? [];
   if (!scope.length && !only.length) return true;
